@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>egod.space</title>
+<meta name="description" content="Beka Zakaidze — egod">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg: #0a0a0a;
+    --fg: #e8e8e8;
+    --fg-dim: #555;
+    --accent: #7c5bf5;
+    --accent-glow: rgba(124, 91, 245, 0.15);
+  }
+
+  html { height: 100%; }
+
+  body {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    height: 100%;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  canvas#dots {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.3;
+  }
+
+  .orb {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124, 91, 245, 0.12) 0%, rgba(124, 91, 245, 0.03) 40%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: breathe 8s ease-in-out infinite, drift 20s ease-in-out infinite;
+  }
+
+  .orb-secondary {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(91, 140, 245, 0.08) 0%, transparent 60%);
+    filter: blur(80px);
+    animation: breathe 10s ease-in-out infinite reverse, drift-reverse 25s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  }
+
+  @keyframes drift {
+    0%, 100% { top: 48%; left: 50%; }
+    25% { top: 52%; left: 52%; }
+    50% { top: 46%; left: 48%; }
+    75% { top: 50%; left: 53%; }
+  }
+
+  @keyframes drift-reverse {
+    0%, 100% { top: 52%; left: 48%; }
+    25% { top: 46%; left: 50%; }
+    50% { top: 54%; left: 52%; }
+    75% { top: 48%; left: 46%; }
+  }
+
+  .scene {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    opacity: 0;
+    animation: enter 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  }
+
+  @keyframes enter {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .name {
+    font-size: clamp(2.4rem, 7vw, 5.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    background: linear-gradient(
+      135deg,
+      var(--fg) 0%,
+      rgba(232, 232, 232, 0.7) 50%,
+      var(--fg) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 8s ease-in-out infinite;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .name-middle {
+    display: inline-block;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    opacity: 0;
+    transition: max-width 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                padding 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.35s ease;
+  }
+
+  .name-middle.revealed {
+    max-width: 4.5ch;
+    opacity: 1;
+    padding: 0 0.08em;
+  }
+
+  .name-middle .char {
+    display: inline-block;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.12);
+    position: relative;
+  }
+
+  .name-middle .char:not(.locked) {
+    animation: jitter 0.07s steps(2) infinite;
+  }
+
+  .name-middle .char.locked {
+    -webkit-text-fill-color: var(--fg);
+    animation: char-lock 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes jitter {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1.5px); }
+  }
+
+  @keyframes char-lock {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+    35% { transform: scale(1.2); filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.7)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+  }
+
+  .tagline {
+    margin-top: 1.2rem;
+    font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+    font-weight: 300;
+    color: var(--fg-dim);
+    letter-spacing: 0.06em;
+    text-transform: lowercase;
+    opacity: 0;
+    animation: fade-in 1.5s ease 1.2s forwards;
+  }
+
+  @keyframes fade-in {
+    to { opacity: 1; }
+  }
+
+  .links {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 3rem;
+    opacity: 0;
+    animation: fade-in 1.5s ease 1.8s forwards;
+  }
+
+  .links a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: var(--fg-dim);
+    text-decoration: none;
+    border-radius: 50%;
+    transition: color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+    position: relative;
+  }
+
+  .links a::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: var(--accent-glow);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    filter: blur(8px);
+  }
+
+  .links a:hover {
+    color: var(--fg);
+    transform: translateY(-2px);
+  }
+
+  .links a:hover::before {
+    opacity: 1;
+  }
+
+  .links svg {
+    width: 20px;
+    height: 20px;
+    position: relative;
+    z-index: 1;
+    fill: currentColor;
+  }
+
+  /* subtle noise overlay */
+  .noise {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  /* vignette */
+  .vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, var(--bg) 100%);
+  }
+
+  @media (max-width: 480px) {
+    .links { gap: 1.2rem; margin-top: 2.5rem; }
+    .links a { width: 36px; height: 36px; }
+    .links svg { width: 18px; height: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="dots"></canvas>
+
+<div class="orb"></div>
+<div class="orb orb-secondary"></div>
+
+<div class="scene">
+  <h1 class="name">Beka <span class="name-middle" data-text="Egod"></span> Zakaidze</h1>
+  <p class="tagline">building things that move</p>
+
+  <nav class="links" aria-label="Social links">
+    <!-- X / Twitter -->
+    <a href="https://x.com/StepnEurope" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+      <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </a>
+    <!-- Telegram -->
+    <a href="https://t.me/sepivip" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+      <svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+    </a>
+    <!-- GitHub -->
+    <a href="https://github.com/sepivip" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+      <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+    </a>
+    <!-- LinkedIn -->
+    <a href="https://www.linkedin.com/in/sepivip/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+      <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    </a>
+  </nav>
+</div>
+
+<div class="vignette"></div>
+<div class="noise"></div>
+
+<script>
+  // Dot grid on canvas
+  (() => {
+    const canvas = document.getElementById('dots');
+    const ctx = canvas.getContext('2d');
+    let w, h;
+    const spacing = 32;
+    const baseRadius = 0.6;
+    const color = 'rgba(255,255,255,';
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      w = canvas.width = window.innerWidth * dpr;
+      h = canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.scale(dpr, dpr);
+    }
+
+    let mx = window.innerWidth / 2;
+    let my = window.innerHeight / 2;
+
+    window.addEventListener('mousemove', e => {
+      mx = e.clientX;
+      my = e.clientY;
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      const cols = Math.ceil(window.innerWidth / spacing);
+      const rows = Math.ceil(window.innerHeight / spacing);
+
+      for (let i = 0; i <= cols; i++) {
+        for (let j = 0; j <= rows; j++) {
+          const x = i * spacing;
+          const y = j * spacing;
+          const dist = Math.hypot(x - mx, y - my);
+          const maxDist = 200;
+          const influence = Math.max(0, 1 - dist / maxDist);
+          const r = baseRadius + influence * 1.4;
+          const alpha = 0.12 + influence * 0.35;
+
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = color + alpha + ')';
+          ctx.fill();
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    draw();
+  })();
+
+  // Name proximity reveal — "Egod" decrypts when cursor approaches
+  (() => {
+    const nameEl = document.querySelector('.name');
+    const middleEl = document.querySelector('.name-middle');
+    const target = middleEl.dataset.text;
+    const glyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#%&$';
+    let state = 'hidden'; // hidden | revealing | shown | hiding
+
+    function distTo(el, x, y) {
+      const r = el.getBoundingClientRect();
+      const dx = Math.max(r.left - x, 0, x - r.right);
+      const dy = Math.max(r.top - y, 0, y - r.bottom);
+      return Math.hypot(dx, dy);
+    }
+
+    document.addEventListener('mousemove', e => {
+      const d = distTo(nameEl, e.clientX, e.clientY);
+      if (d < 120 && state === 'hidden') reveal();
+      else if (d > 220 && state === 'shown') hide();
+    });
+
+    function reveal() {
+      state = 'revealing';
+
+      // Build char placeholders
+      middleEl.innerHTML = target.split('').map(() =>
+        '<span class="char"></span>'
+      ).join('');
+
+      // Trigger CSS expansion on next frame
+      requestAnimationFrame(() => middleEl.classList.add('revealed'));
+
+      const chars = middleEl.querySelectorAll('.char');
+      let resolved = 0;
+
+      chars.forEach((el, i) => {
+        const delay = i * 140;
+        const scrambleMs = 280;
+
+        setTimeout(() => {
+          // Scramble phase
+          const iv = setInterval(() => {
+            el.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+          }, 40);
+
+          // Lock-in phase
+          setTimeout(() => {
+            clearInterval(iv);
+            el.textContent = target[i];
+            el.classList.add('locked');
+            if (++resolved === chars.length) state = 'shown';
+          }, scrambleMs);
+        }, delay);
+      });
+    }
+
+    function hide() {
+      state = 'hiding';
+      const chars = middleEl.querySelectorAll('.char');
+
+      // Quick scramble out
+      chars.forEach(el => {
+        el.classList.remove('locked');
+        const iv = setInterval(() => {
+          el.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+        }, 30);
+        setTimeout(() => { clearInterval(iv); el.textContent = ''; }, 110);
+      });
+
+      setTimeout(() => {
+        middleEl.classList.remove('revealed');
+        setTimeout(() => { middleEl.innerHTML = ''; state = 'hidden'; }, 600);
+      }, 120);
+    }
+  })();
+</script>
+</body>
+</html>
