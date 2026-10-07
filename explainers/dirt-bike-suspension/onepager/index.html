@@ -566,8 +566,12 @@ const Phys = (() => {
   const STOCK = { rider: 78, spring: 5.4, preload: 11.5, comp: 10, reb: 10, speed: 40 };
   const forkRateFor = shock => Math.round(0.45 * shock / 5.4 * 100) / 100; // kg/mm per fork spring
 
+  // Each end can have its own clickers (fComp/fReb on the fork; rComp/rHsc/rReb on the shock).
+  // Anything left out falls back to the shared comp/reb, which is all the one-page version uses.
   function makeCfg(set, opts = {}) {
-    const mC = clickMult(set.comp), mR = clickMult(set.reb);
+    const mFC = clickMult(set.fComp ?? set.comp), mFR = clickMult(set.fReb ?? set.reb);
+    const mRC = clickMult(set.rComp ?? set.comp), mRR = clickMult(set.rReb ?? set.reb);
+    const mRH = clickMult(set.rHsc ?? set.rComp ?? set.comp);
     const forkKgmm = set.forkSpring || forkRateFor(set.spring);
     const stiff = opts.rigid ? 40 : 1, dstiff = opts.rigid ? 20 : 1;
     return {
@@ -578,10 +582,12 @@ const Phys = (() => {
       preload: set.preload / 1000,
       forkKgmm,
       // Front damping at the wheel (N·s/m); rear damping at the shock shaft.
-      fC: { ls: DAMP.FC_LS * mC * dstiff, hs: DAMP.FC_HS * mC ** 0.75 * dstiff, knee: 0.30 },
-      fR: { ls: DAMP.FR_LS * mR * dstiff, hs: DAMP.FR_HS * mR * dstiff, knee: 0.30 },
-      rC: { ls: DAMP.RC_LS * mC * dstiff, hs: DAMP.RC_HS * mC ** 0.75 * dstiff, knee: 0.12 },
-      rR: { ls: DAMP.RR_LS * mR * dstiff, hs: DAMP.RR_HS * mR * dstiff, knee: 0.12 },
+      fC: { ls: DAMP.FC_LS * mFC * dstiff, hs: DAMP.FC_HS * mFC ** 0.75 * dstiff, knee: 0.30 },
+      fR: { ls: DAMP.FR_LS * mFR * dstiff, hs: DAMP.FR_HS * mFR * dstiff, knee: 0.30 },
+      // Shock compression: the low-speed clicker shapes slow, small movements; the high-speed
+      // adjuster takes over on fast, big hits (landings, square edges).
+      rC: { ls: DAMP.RC_LS * mRC * dstiff, hs: DAMP.RC_HS * mRC ** 0.3 * mRH ** 0.45 * dstiff, knee: 0.12 },
+      rR: { ls: DAMP.RR_LS * mRR * dstiff, hs: DAMP.RR_HS * mRR * dstiff, knee: 0.12 },
       rigid: !!opts.rigid,
     };
   }
