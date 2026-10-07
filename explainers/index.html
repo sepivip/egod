@@ -66,9 +66,16 @@
     border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px;
   }
   .card svg { width: clamp(56px, 9vw, 84px); height: auto; display: block; }
+  .item { display: grid; gap: 8px; }
+  .alt {
+    justify-self: end; font-family: var(--data); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--dim); text-decoration: none; padding: 4px 2px;
+  }
+  .alt:hover { color: var(--gold); }
   .soon { margin-top: 20px; font-family: var(--data); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
   @media (max-width: 560px) {
     .card { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .alt { justify-self: start; }
     .card svg { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
@@ -85,13 +92,13 @@
   <p class="lede">Things you can poke at until they make sense. Every page is a live model: move the sliders, break it on purpose, and watch what changes.</p>
 
   <ol class="list">
-    <li>
+    <li class="item">
       <a class="card" href="/explainers/dirt-bike-suspension/">
         <span class="num">01</span>
         <div>
           <h2>Dirt bike suspension</h2>
-          <p>Why a bike floats over whoops or bucks you off, and what sag, springs, compression and rebound actually do.</p>
-          <div class="tags"><span>Sag</span><span>Springs</span><span>Compression</span><span>Rebound</span></div>
+          <p>Walk around a 3D test lab, swap springs, spin the clickers and change the rider, then watch the bike float over whoops or buck you off.</p>
+          <div class="tags"><span>3D lab</span><span>Sag</span><span>Springs</span><span>Compression</span><span>Rebound</span></div>
         </div>
         <svg viewBox="0 0 84 84" aria-hidden="true">
           <rect x="34" y="4" width="16" height="16" rx="3" fill="#9aa0a8"/>
@@ -100,6 +107,7 @@
           <rect x="34" y="64" width="16" height="16" rx="3" fill="#e3ad4b"/>
         </svg>
       </a>
+      <a class="alt" href="/explainers/dirt-bike-suspension/onepager/">Prefer to scroll and read? One-page version →</a>
     </li>
   </ol>
   <p class="soon">More on the way.</p>
