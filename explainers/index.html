@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Explainers · egod.space</title>
+<meta name="description" content="Interactive explainers you can play with. Move the sliders, break things, and see how they work.">
+<meta name="theme-color" content="#0c0b0a">
+<meta property="og:title" content="Explainers · egod.space">
+<meta property="og:description" content="Interactive explainers you can play with. Move the sliders, break things, and see how they work.">
+<meta property="og:image" content="https://egod.space/og.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='30' fill='none' stroke='%23e3ad4b' stroke-width='12'/><circle cx='50' cy='50' r='8' fill='%235ea4e8'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0c0b0a;
+    --panel: #15140f;
+    --line: rgba(232, 220, 198, 0.13);
+    --text: #e8dcc6;
+    --dim: #9c9180;
+    --gold: #e3ad4b;
+    --blue: #5ea4e8;
+    --display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
+    --data: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --gutter: clamp(16px, 4vw, 40px);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: var(--ink); color: var(--text);
+    font-family: var(--display); font-size: 1.0625rem; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding-inline: var(--gutter);
+    padding-block: calc(14px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px));
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: 56rem; margin-inline: auto; }
+  .topbar {
+    display: flex; justify-content: space-between; gap: 1rem;
+    font-family: var(--data); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim);
+  }
+  .topbar a { color: var(--dim); text-decoration: none; }
+  .topbar a:hover { color: var(--text); }
+  h1 {
+    font-stretch: 125%; font-weight: 800; text-transform: uppercase; line-height: 0.95; letter-spacing: -0.01em;
+    font-size: clamp(2.6rem, 9vw, 5.6rem); margin: clamp(56px, 14vh, 140px) 0 1rem; text-wrap: balance;
+  }
+  .lede { color: var(--dim); font-size: 1.15rem; max-width: 34rem; margin: 0 0 clamp(40px, 8vh, 72px); }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .card {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: clamp(16px, 3vw, 32px); align-items: center;
+    padding: clamp(18px, 3vw, 28px); background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    text-decoration: none; transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: rgba(227, 173, 75, 0.55); transform: translateY(-2px); }
+  .num { font-family: var(--data); font-size: 0.85rem; color: var(--gold); letter-spacing: 0.08em; }
+  .card h2 { margin: 0 0 0.25rem; font-stretch: 118%; font-weight: 700; font-size: clamp(1.3rem, 3vw, 1.75rem); line-height: 1.15; }
+  .card p { margin: 0; color: var(--dim); font-size: 0.98rem; }
+  .tags { margin-top: 0.7rem; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span {
+    font-family: var(--data); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim);
+    border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px;
+  }
+  .card svg { width: clamp(56px, 9vw, 84px); height: auto; display: block; }
+  .soon { margin-top: 20px; font-family: var(--data); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  @media (max-width: 560px) {
+    .card { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .card svg { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <a href="/">egod.space</a>
+    <span>Explainers</span>
+  </header>
+
+  <h1>Explainers</h1>
+  <p class="lede">Things you can poke at until they make sense. Every page is a live model: move the sliders, break it on purpose, and watch what changes.</p>
+
+  <ol class="list">
+    <li>
+      <a class="card" href="/explainers/dirt-bike-suspension/">
+        <span class="num">01</span>
+        <div>
+          <h2>Dirt bike suspension</h2>
+          <p>Why a bike floats over whoops or bucks you off, and what sag, springs, compression and rebound actually do.</p>
+          <div class="tags"><span>Sag</span><span>Springs</span><span>Compression</span><span>Rebound</span></div>
+        </div>
+        <svg viewBox="0 0 84 84" aria-hidden="true">
+          <rect x="34" y="4" width="16" height="16" rx="3" fill="#9aa0a8"/>
+          <rect x="38" y="20" width="8" height="48" fill="#6d727a"/>
+          <path d="M24 26 L60 31 M24 34 L60 39 M24 42 L60 47 M24 50 L60 55 M24 58 L60 63" stroke="#5ea4e8" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <rect x="34" y="64" width="16" height="16" rx="3" fill="#e3ad4b"/>
+        </svg>
+      </a>
+    </li>
+  </ol>
+  <p class="soon">More on the way.</p>
+</div>
+</body>
+</html>
