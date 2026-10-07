@@ -129,6 +129,12 @@
   .hot i { width: 10px; height: 10px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 0 rgba(227, 173, 75, 0.6); animation: ping 2.2s infinite; }
   .hot:hover, .hot:focus-visible { border-color: var(--gold); }
   @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(227, 173, 75, 0.55); } 70%, 100% { box-shadow: 0 0 0 9px rgba(227, 173, 75, 0); } }
+  /* hotspots riding on the bike itself */
+  .hot.bike { padding: 3px 10px 3px 4px; font-family: var(--data); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .hot.bike.f { color: var(--gold); border-color: rgba(227, 173, 75, 0.6); }
+  .hot.bike.r { color: var(--blue); border-color: rgba(94, 164, 232, 0.65); }
+  .hot.bike.r i { background: var(--blue); animation-name: ping-b; }
+  @keyframes ping-b { 0% { box-shadow: 0 0 0 0 rgba(94, 164, 232, 0.55); } 70%, 100% { box-shadow: 0 0 0 9px rgba(94, 164, 232, 0); } }
   .tag3d {
     position: absolute; z-index: 3; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: none;
     font-family: var(--data); font-size: 0.74rem; padding: 4px 8px; border-radius: 8px; background: var(--glass); border: 1px solid var(--line-2); white-space: nowrap;
@@ -143,8 +149,10 @@
 
   /* ---------- intro ---------- */
   .intro {
-    position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px;
-    background: radial-gradient(ellipse at 50% 60%, rgba(12, 11, 10, 0.35), rgba(12, 11, 10, 0.86));
+    position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; overscroll-behavior: contain;
+    background: radial-gradient(ellipse at 50% 45%, rgba(12, 11, 10, 0.55), rgba(12, 11, 10, 0.93) 75%);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
   }
   .intro-card { max-width: 560px; text-align: left; }
   .intro .kicker { font-family: var(--data); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
@@ -152,7 +160,7 @@
   .intro p { color: var(--dim); font-size: 1.05rem; margin: 0 0 18px; max-width: 46ch; }
   .intro ul { list-style: none; padding: 0; margin: 0 0 22px; display: grid; gap: 6px; font-size: 0.92rem; }
   .intro li { display: flex; gap: 10px; }
-  .intro li b { font-family: var(--data); font-weight: 600; color: var(--text); min-width: 7.5em; font-size: 0.8rem; letter-spacing: 0.04em; padding-top: 2px; }
+  .intro li b { font-family: var(--data); font-weight: 600; color: var(--text); flex: none; width: 7.5em; font-size: 0.8rem; letter-spacing: 0.04em; padding-top: 2px; }
   .intro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
   .go { background: var(--gold); color: var(--ink); border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 800; font-size: 1rem; font-stretch: 112%; letter-spacing: 0.02em; }
   .go:hover { background: var(--text); }
@@ -169,12 +177,12 @@
     display: grid; gap: 8px;
   }
   .tabs { display: none; }
-  .scope { position: relative; height: 46px; border-radius: 10px; background: var(--bezel); border: 1px solid var(--line); overflow: hidden; }
+  .scope { position: relative; height: 34px; border-radius: 10px; background: var(--bezel); border: 1px solid var(--line); overflow: hidden; }
   .scope canvas { width: 100%; height: 100%; display: block; }
   .scope .legend { position: absolute; right: 10px; top: 6px; display: flex; gap: 12px; font-family: var(--data); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); pointer-events: none; }
   .scope .legend span::before { content: ''; display: inline-block; width: 10px; height: 2px; margin-right: 5px; vertical-align: middle; background: currentColor; }
   .scope .legend .f { color: var(--gold); } .scope .legend .r { color: var(--blue); }
-  .mods { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 0.95fr) minmax(0, 1.15fr); gap: 8px; }
+  .mods { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.25fr) minmax(0, 1.12fr) minmax(0, 1.9fr); gap: 8px; }
   .mod {
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px 10px; min-width: 0;
     transition: border-color 0.3s, box-shadow 0.3s;
@@ -182,34 +190,73 @@
   .mod.flash { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(227, 173, 75, 0.25); }
   .mod h2 { margin: 0 0 6px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-family: var(--data); font-weight: 600; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
   .mod h2 small { font-size: inherit; color: var(--faint); letter-spacing: 0.06em; }
-  .row { display: flex; gap: 8px; align-items: stretch; justify-content: space-around; }
+  .row { display: flex; gap: 6px; align-items: stretch; justify-content: space-around; }
+  /* fork = gold, shock = blue, everywhere */
+  .mod h2 .end { font-size: 0.72rem; letter-spacing: 0.14em; }
+  .mod h2 .end em { font-style: normal; color: var(--faint); letter-spacing: 0.06em; margin-left: 4px; }
+  .end.f { color: var(--gold); } .end.r { color: var(--blue); }
+  .m-fork { border-top: 2px solid rgba(227, 173, 75, 0.55); }
+  .m-shock { border-top: 2px solid rgba(94, 164, 232, 0.6); }
+  .end-mod { display: flex; gap: 8px; align-items: flex-start; }
+  .end-mod .row { flex: 1; min-width: 0; }
+  .end-mod .spring-col { flex: none; width: 64px; }
+  /* sag */
+  .sag-mod { display: grid; grid-template-columns: minmax(0, 1fr) 136px; gap: 10px; align-items: start; }
+  .sag-bars { display: grid; gap: 7px; min-width: 0; }
+  .sagbar { display: grid; gap: 3px; }
+  .sb-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+  .sb-top em { font-style: normal; font-weight: 400; color: var(--faint); font-size: 0.64rem; }
+  .sb-top b { font-family: var(--data); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  .sb-track { position: relative; height: 8px; border-radius: 4px; background: rgba(232, 220, 198, 0.1); }
+  .sb-band { position: absolute; top: 0; bottom: 0; background: rgba(140, 200, 138, 0.3); box-shadow: inset 1px 0 0 var(--good), inset -1px 0 0 var(--good); }
+  .sb-mark { position: absolute; top: -3px; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; background: var(--text); transition: left 0.25s; }
+  .sagbar.ok .sb-mark { background: var(--good); } .sagbar.off .sb-mark { background: var(--warn); }
+  .sb-scale { display: flex; justify-content: space-between; font-family: var(--data); font-size: 0.56rem; color: var(--faint); }
+  .sb-target { color: var(--dim); }
+  .fork-sag { margin: 0; font-size: 0.68rem; color: var(--dim); }
+  .fork-sag b { color: var(--gold); font-family: var(--data); font-weight: 600; }
+  .sag-ctl { display: grid; gap: 6px; min-width: 0; }
+  .mini { display: grid; gap: 2px; }
+  .mini-label { font-size: 0.7rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mini-label small { font-weight: 400; color: var(--faint); font-size: 0.62rem; }
+  .sag-ctl .stepper { gap: 4px; }
+  .sag-ctl .stepper button { width: 24px; height: 24px; }
+  .sag-ctl .stepper .val b { font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; }
+  .sag-ctl .stepper .val span { font-size: 0.58rem; }
+  .stepper.blue button { border-color: rgba(94, 164, 232, 0.5); color: var(--blue); }
+  .btn.wide { justify-self: stretch; text-align: center; }
 
   /* gauges */
-  .gauges { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 4px 6px; align-items: center; }
-  .dial { width: 100px; height: 86px; display: block; }
-  .reads { display: grid; gap: 3px; min-width: 0; }
-  .reads div { min-width: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
-  .reads div:last-child { border-bottom: 0; }
-  .reads span { font-size: 0.68rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .reads b { font-family: var(--data); font-weight: 600; font-size: 0.86rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gauges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 6px; align-items: center; justify-items: center; }
+  .dial { width: 100%; max-width: 104px; height: 78px; display: block; }
+  .reads { grid-column: 1 / -1; justify-self: stretch; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; margin-top: 4px; }
+  .reads div { min-width: 0; display: grid; gap: 0; padding-left: 7px; border-left: 1px solid var(--line); }
+  .reads div:first-child { padding-left: 0; border-left: 0; }
+  .reads span { font-size: 0.6rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .reads b { font-family: var(--data); font-weight: 600; font-size: 0.84rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   /* knobs */
-  .kn { display: grid; justify-items: center; gap: 1px; min-width: 0; flex: 1; max-width: 150px; }
-  .kn-label { font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
-  .kn-val { font-family: var(--data); font-size: 0.7rem; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .kn-foot { display: grid; grid-template-columns: auto 1fr 1fr auto; align-items: center; gap: 4px; width: 100%; font-family: var(--data); font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-  .kn-foot span:last-of-type { text-align: right; }
-  .kn-step { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-2); background: transparent; font-size: 0.85rem; line-height: 1; padding: 0; color: var(--dim); }
-  .kn-step:hover { color: var(--text); border-color: var(--text); }
-  .kn-dial { position: relative; width: 62px; height: 62px; margin: 4px 0 2px; touch-action: none; cursor: ns-resize; border-radius: 50%; }
+  .kn { display: grid; justify-items: center; gap: 1px; min-width: 0; flex: 1 1 0; max-width: 124px; }
+  .kn-label, .kn-sub, .kn-val { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kn-label { font-size: 0.72rem; font-weight: 600; }
+  .kn-sub { font-size: 0.56rem; color: var(--faint); margin-top: -2px; }
+  .kn-val { font-family: var(--data); font-size: 0.62rem; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .kn-foot { display: flex; justify-content: center; gap: 3px; width: 100%; margin-top: 2px; }
+  .kn-step {
+    flex: 1 1 0; min-width: 0; max-width: 54px; height: 20px; padding: 0 4px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent;
+    font-family: var(--data); font-size: 0.54rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .kn-step:hover { color: var(--text); border-color: var(--kc, var(--text)); }
+  .kn-step:active { background: rgba(232, 220, 198, 0.1); }
+  .kn-dial { position: relative; width: 54px; height: 54px; margin: 3px 0 1px; touch-action: none; cursor: ns-resize; border-radius: 50%; }
   .kn-dial svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .kn-cap {
-    position: absolute; inset: 12px; border-radius: 50%;
+    position: absolute; inset: 10px; border-radius: 50%;
     background: radial-gradient(circle at 38% 30%, #59544a, #24221c 62%, #171610);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 5px 10px rgba(0, 0, 0, 0.55), 0 0 0 3px #0b0a08;
   }
-  .kn-cap::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 255, 255, 0.05) 0 6deg, transparent 6deg 12deg); }
-  .kn-cap i { position: absolute; left: 50%; top: 3px; width: 3px; height: 11px; margin-left: -1.5px; border-radius: 2px; background: var(--kc, var(--gold)); }
+  .kn-cap::after { content: ''; position: absolute; inset: 6px; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 255, 255, 0.05) 0 6deg, transparent 6deg 12deg); }
+  .kn-cap i { position: absolute; left: 50%; top: 3px; width: 3px; height: 9px; margin-left: -1.5px; border-radius: 2px; background: var(--kc, var(--gold)); }
 
   /* steppers + ranges */
   .stepper { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; }
@@ -227,18 +274,21 @@
   input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 3px solid var(--c, var(--gold)); }
   .spring-mod { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 6px; align-items: start; }
   .spring-col { display: grid; justify-items: center; gap: 2px; text-align: center; min-width: 0; }
-  .spring-col .coil { width: 26px; height: 36px; margin: 4px 0 0; }
+  .spring-col .coil { width: 26px; height: 32px; margin: 3px 0 0; }
+  .spring-col .coil.tall { width: 18px; }
   .spring-col b { font-family: var(--data); font-size: 1.05rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .spring-col > span:not(.kn-label) { font-family: var(--data); font-size: 0.62rem; color: var(--dim); white-space: nowrap; }
-  .spring-col .stepper { display: flex; gap: 6px; margin-top: 2px; }
-  .spring-col .stepper button { width: 34px; height: 24px; }
+  .spring-col > span:not(.kn-label) { font-family: var(--data); font-size: 0.56rem; line-height: 1.3; color: var(--dim); white-space: nowrap; }
+  .spring-col .stepper { display: flex; gap: 4px; margin-top: 3px; }
+  .spring-col .stepper button { width: 29px; height: 22px; font-size: 0.9rem; }
 
   /* track */
   .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-  .seg button { border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 8px; padding: 5px 4px; font-size: 0.74rem; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg button { border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 8px; padding: 4px; font-size: 0.74rem; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .seg button:hover { border-color: var(--text); }
   .seg button[aria-pressed="true"] { background: var(--text); color: var(--ink); border-color: var(--text); }
-  .seg.modes { margin-top: 6px; }
+  .seg.modes { margin-top: 4px; }
+  .speed-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 6px; font-size: 0.76rem; font-weight: 600; }
+  .speed-row output { font-family: var(--data); font-weight: 400; color: var(--dim); font-size: 0.7rem; min-width: 5.4em; text-align: right; font-variant-numeric: tabular-nums; }
   .small-note { margin: 6px 0 0; font-size: 0.72rem; color: var(--dim); }
   .btn-row { display: flex; gap: 4px; margin-top: 6px; }
   .btn { border: 1px solid var(--line-2); background: transparent; border-radius: 999px; padding: 4px 8px; font-size: 0.68rem; font-weight: 600; white-space: nowrap; }
@@ -246,10 +296,34 @@
   .btn:hover { border-color: var(--text); }
 
   /* ---------- tablet / phone ---------- */
+  /* wide screens: the test-lane panel floats over the room, bottom right */
+  @media (min-width: 1181px) {
+    .cockpit .m-track {
+      position: absolute; right: var(--gutter); bottom: calc(100% + 12px); width: 288px;
+      background: var(--glass); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-color: var(--line-2); border-radius: 14px;
+    }
+  }
+  /* tablets and phones: one cockpit panel at a time, picked with tabs */
   @media (max-width: 1180px) {
-    .mods { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-    .mod.m-gauges { grid-column: span 3; } .mod.m-damp { grid-column: span 3; }
-    .mod.m-spring, .mod.m-rider, .mod.m-track { grid-column: span 2; }
+    .tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; position: sticky; top: -6px; z-index: 2; background: #17150e; padding: 4px 0; }
+    .tabs button { border: 1px solid var(--line-2); background: transparent; border-radius: 8px; padding: 6px 2px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tabs button[aria-selected="true"] { background: var(--text); color: var(--ink); border-color: var(--text); }
+    .tabs .t-f { color: var(--gold); border-color: rgba(227, 173, 75, 0.5); }
+    .tabs .t-r { color: var(--blue); border-color: rgba(94, 164, 232, 0.55); }
+    .tabs .t-f[aria-selected="true"] { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+    .tabs .t-r[aria-selected="true"] { background: var(--blue); border-color: var(--blue); color: var(--ink); }
+    .mods { display: block; }
+    .mod { display: none; }
+    .mod.on { display: block; }
+    .mod.m-fork, .mod.m-shock { border-top-width: 1px; }
+    .gauges { grid-template-columns: auto auto minmax(0, 1fr); justify-items: stretch; }
+    .dial { width: 104px; height: 86px; }
+    .reads { grid-column: auto; grid-template-columns: minmax(0, 1fr); gap: 3px; margin: 0; }
+    .reads div { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding: 0 0 2px; border-left: 0; border-bottom: 1px solid var(--line); }
+    .reads div:last-child { border-bottom: 0; }
+    .reads span { font-size: 0.7rem; }
+    .sag-mod { grid-template-columns: minmax(0, 1fr) minmax(136px, 0.8fr); }
+    .gauges, .sag-mod, .end-mod, .m-track > :not(h2) { max-width: 760px; }
   }
   @media (max-width: 760px) {
     body { font-size: 14px; }
@@ -257,12 +331,12 @@
     .cockpit { min-height: 0; overflow-y: auto; padding-top: 6px; box-shadow: none; align-content: start; }
     .top { display: none; }
     .scope { display: none; }
-    .tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; position: sticky; top: -6px; z-index: 2; background: #17150e; padding: 4px 0; }
-    .tabs button { border: 1px solid var(--line-2); background: transparent; border-radius: 8px; padding: 6px 2px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tabs button[aria-selected="true"] { background: var(--text); color: var(--ink); border-color: var(--text); }
-    .mods { display: block; }
-    .mod { display: none; }
-    .mod.on { display: block; }
+    .end-mod { gap: 6px; }
+    .end-mod .spring-col { width: 52px; }
+    .spring-col .stepper button { width: 24px; }
+    .m-shock .row { gap: 4px; }
+    .m-shock .kn-label { font-size: 0.64rem; }
+    .m-shock .kn-val .out { display: none; }
     .mission { padding: 9px 11px; top: calc(8px + env(safe-area-inset-top, 0px)); }
     .mission:not(.open) .m-problem { display: none; }
     .m-title { font-size: 1.05rem; margin: 4px 0 6px; }
@@ -279,6 +353,11 @@
     .dock .opt { display: none; }
     .chip { padding: 5px 11px; font-size: 0.74rem; flex: none; }
     .crumb .long { display: none; }
+    .intro { place-items: start center; background: rgba(12, 11, 10, 0.84); }
+    .intro h1 { font-size: 2.5rem; margin: 8px 0 10px; }
+    .intro p { font-size: 0.95rem; margin-bottom: 14px; }
+    .intro ul { font-size: 0.86rem; margin-bottom: 18px; }
+    .intro li b { width: 6.4em; font-size: 0.72rem; }
   }
   @media (min-width: 761px) { .m-more { display: none; } }
   @media (max-height: 640px) and (min-width: 761px) { .scope { display: none; } .mission .m-problem { display: none; } }
@@ -336,8 +415,9 @@
         <p>A dirt bike rides a rolling test lane in the middle of a workshop. Everything in the room changes how it handles. Break it, fix it, and watch why.</p>
         <ul>
           <li><b>Look around</b><span>Drag to orbit, scroll or pinch to zoom.</span></li>
-          <li><b>Touch things</b><span>Click the glowing dots: spring rack, control desk, rider scale, track board, drop hoist.</span></li>
-          <li><b>Read the gauges</b><span>Gold is the fork, blue is the rear shock. Red means it hit the end of its travel.</span></li>
+          <li><b>Touch things</b><span>Click the fork or the shock on the bike to tune it, or a glowing dot for the spring rack, scale, track board and hoist.</span></li>
+          <li><b>Set the sag</b><span>Weigh the rider on the scale, then turn the shock preload until both sag bars are green.</span></li>
+          <li><b>Read the gauges</b><span>Gold is the fork, blue is the shock. Red means it hit the end of its travel.</span></li>
         </ul>
         <div class="intro-actions">
           <button class="go" type="button" id="go">Enter the lab</button>
@@ -350,9 +430,9 @@
   <section class="cockpit" id="cockpit" aria-label="Cockpit">
     <div class="tabs" role="tablist" aria-label="Cockpit panels">
       <button type="button" role="tab" data-tab="m-gauges" aria-selected="true">Gauges</button>
-      <button type="button" role="tab" data-tab="m-damp" aria-selected="false">Damping</button>
-      <button type="button" role="tab" data-tab="m-spring" aria-selected="false">Springs</button>
-      <button type="button" role="tab" data-tab="m-rider" aria-selected="false">Rider</button>
+      <button type="button" role="tab" data-tab="m-sag" aria-selected="false">Sag</button>
+      <button type="button" role="tab" data-tab="m-fork" aria-selected="false" class="t-f">Fork</button>
+      <button type="button" role="tab" data-tab="m-shock" aria-selected="false" class="t-r">Shock</button>
       <button type="button" role="tab" data-tab="m-track" aria-selected="false">Track</button>
     </div>
     <div class="scope">
@@ -366,42 +446,80 @@
           <canvas class="dial" id="dial-f" aria-label="Fork travel gauge"></canvas>
           <canvas class="dial" id="dial-r" aria-label="Shock travel gauge"></canvas>
           <div class="reads">
-            <div><span>Race sag</span><b id="r-sag">…</b></div>
             <div><span>Bottomed</span><b id="r-bottom">0</b></div>
             <div><span>Max jolt</span><b id="r-jolt">…</b></div>
             <div><span>Tire grip</span><b id="r-grip">…</b></div>
           </div>
         </div>
       </div>
-      <div class="mod m-damp" id="m-damp">
-        <h2>Damping clickers <small>fork + shock</small></h2>
-        <div class="row" id="knobs-damp"></div>
+      <div class="mod m-sag" id="m-sag">
+        <h2>Sag <small id="sag-note">set this first</small></h2>
+        <div class="sag-mod">
+          <div class="sag-bars">
+            <div class="sagbar" id="sb-race">
+              <div class="sb-top"><span>Race sag</span><b>102 mm</b></div>
+              <div class="sb-track"><i class="sb-band"></i><i class="sb-mark"></i></div>
+              <div class="sb-scale"><span>70</span><span class="sb-target">aim 100–105</span><span>140</span></div>
+            </div>
+            <div class="sagbar" id="sb-stat">
+              <div class="sb-top"><span>Static sag</span><b>34 mm</b></div>
+              <div class="sb-track"><i class="sb-band"></i><i class="sb-mark"></i></div>
+              <div class="sb-scale"><span>0</span><span class="sb-target">aim 30–40</span><span>70</span></div>
+            </div>
+            <p class="fork-sag" id="fork-sag">Fork sag 57 mm</p>
+          </div>
+          <div class="sag-ctl">
+            <div class="mini">
+              <span class="mini-label">Rider <small>in gear</small></span>
+              <div class="stepper" id="rider-step">
+                <button type="button" data-d="-1" aria-label="Lighter rider">−</button>
+                <div class="val"><b id="rider-val">78 kg</b><span id="rider-sub">stock: 78 kg</span></div>
+                <button type="button" data-d="1" aria-label="Heavier rider">+</button>
+              </div>
+            </div>
+            <div class="mini">
+              <span class="mini-label">Shock preload</span>
+              <div class="stepper blue" id="pre-step">
+                <button type="button" data-d="-1" aria-label="Less preload">−</button>
+                <div class="val"><b id="pre-val">7.7 turns</b><span id="pre-sub">11.5 mm</span></div>
+                <button type="button" data-d="1" aria-label="More preload">+</button>
+              </div>
+            </div>
+            <button class="btn wide" type="button" id="b-measure">Measure on the scale</button>
+          </div>
+        </div>
       </div>
-      <div class="mod m-spring" id="m-spring">
-        <h2>Springs <small>matched pair</small></h2>
-        <div class="spring-mod">
+      <div class="mod m-fork" id="m-fork">
+        <h2><span class="end f">Fork <em>front</em></span> <small>2 legs · coil</small></h2>
+        <div class="end-mod">
           <div class="spring-col">
-            <span class="kn-label">Spring rate</span>
-            <svg class="coil" id="coil" viewBox="0 0 22 30" aria-hidden="true"></svg>
-            <b id="spring-val">5.4</b>
-            <span id="spring-sub">kg/mm · fork 0.45</span>
-            <div class="stepper" id="spring-step">
-              <button type="button" data-d="-1" aria-label="Softer spring">‹</button>
-              <button type="button" data-d="1" aria-label="Stiffer spring">›</button>
+            <span class="kn-label">Springs</span>
+            <svg class="coil tall" id="fcoil" viewBox="0 0 22 30" aria-hidden="true"></svg>
+            <b id="fspring-val">0.45</b>
+            <span id="fspring-sub">kg/mm<br>stock</span>
+            <div class="stepper" id="fspring-step">
+              <button type="button" data-d="-1" aria-label="Softer fork springs">‹</button>
+              <button type="button" data-d="1" aria-label="Stiffer fork springs">›</button>
             </div>
           </div>
-          <div class="row" id="knobs-pre"></div>
+          <div class="row" id="knobs-fork"></div>
         </div>
       </div>
-      <div class="mod m-rider" id="m-rider">
-        <h2>Rider <small>in full gear</small></h2>
-        <div class="stepper" id="rider-step">
-          <button type="button" data-d="-1" aria-label="Lighter rider">−</button>
-          <div class="val"><b id="rider-val">78 kg</b><span id="rider-sub">stock setup is for 78 kg</span></div>
-          <button type="button" data-d="1" aria-label="Heavier rider">+</button>
+      <div class="mod m-shock" id="m-shock">
+        <h2><span class="end r">Shock <em>rear</em></span> <small>linkage · piggyback</small></h2>
+        <div class="end-mod">
+          <div class="spring-col">
+            <span class="kn-label">Spring</span>
+            <svg class="coil" id="coil" viewBox="0 0 22 30" aria-hidden="true"></svg>
+            <b id="spring-val">5.4</b>
+            <span id="spring-sub">kg/mm<br>stock</span>
+            <div class="stepper" id="spring-step">
+              <button type="button" data-d="-1" aria-label="Softer shock spring">‹</button>
+              <button type="button" data-d="1" aria-label="Stiffer shock spring">›</button>
+            </div>
+          </div>
+          <div class="row" id="knobs-shock"></div>
         </div>
-        <label class="ctl-label" for="speed">Speed <output id="speed-val">40 km/h</output></label>
-        <input type="range" id="speed" min="15" max="65" step="1" value="40">
       </div>
       <div class="mod m-track" id="m-track">
         <h2>Test lane <small id="lane-note">program</small></h2>
@@ -418,8 +536,8 @@
           <button type="button" data-mode="sag">Sag check</button>
           <button type="button" data-mode="drop">Drop test</button>
         </div>
+        <div class="speed-row"><label for="speed">Speed</label><input type="range" id="speed" min="15" max="65" step="1" value="40"><output id="speed-val" for="speed">40 km/h</output></div>
         <div class="btn-row">
-          <button class="btn hot-btn" type="button" id="b-rider" hidden>Rider off</button>
           <button class="btn" type="button" id="b-stock">Stock settings</button>
           <button class="btn" type="button" id="b-problem">Restore problem</button>
         </div>
@@ -469,8 +587,12 @@ const Phys = (() => {
   const STOCK = { rider: 78, spring: 5.4, preload: 11.5, comp: 10, reb: 10, speed: 40 };
   const forkRateFor = shock => Math.round(0.45 * shock / 5.4 * 100) / 100; // kg/mm per fork spring
 
+  // Each end can have its own clickers (fComp/fReb on the fork; rComp/rHsc/rReb on the shock).
+  // Anything left out falls back to the shared comp/reb, which is all the one-page version uses.
   function makeCfg(set, opts = {}) {
-    const mC = clickMult(set.comp), mR = clickMult(set.reb);
+    const mFC = clickMult(set.fComp ?? set.comp), mFR = clickMult(set.fReb ?? set.reb);
+    const mRC = clickMult(set.rComp ?? set.comp), mRR = clickMult(set.rReb ?? set.reb);
+    const mRH = clickMult(set.rHsc ?? set.rComp ?? set.comp);
     const forkKgmm = set.forkSpring || forkRateFor(set.spring);
     const stiff = opts.rigid ? 40 : 1, dstiff = opts.rigid ? 20 : 1;
     return {
@@ -481,10 +603,12 @@ const Phys = (() => {
       preload: set.preload / 1000,
       forkKgmm,
       // Front damping at the wheel (N·s/m); rear damping at the shock shaft.
-      fC: { ls: DAMP.FC_LS * mC * dstiff, hs: DAMP.FC_HS * mC ** 0.75 * dstiff, knee: 0.30 },
-      fR: { ls: DAMP.FR_LS * mR * dstiff, hs: DAMP.FR_HS * mR * dstiff, knee: 0.30 },
-      rC: { ls: DAMP.RC_LS * mC * dstiff, hs: DAMP.RC_HS * mC ** 0.75 * dstiff, knee: 0.12 },
-      rR: { ls: DAMP.RR_LS * mR * dstiff, hs: DAMP.RR_HS * mR * dstiff, knee: 0.12 },
+      fC: { ls: DAMP.FC_LS * mFC * dstiff, hs: DAMP.FC_HS * mFC ** 0.75 * dstiff, knee: 0.30 },
+      fR: { ls: DAMP.FR_LS * mFR * dstiff, hs: DAMP.FR_HS * mFR * dstiff, knee: 0.30 },
+      // Shock compression: the low-speed clicker shapes slow, small movements; the high-speed
+      // adjuster takes over on fast, big hits (landings, square edges).
+      rC: { ls: DAMP.RC_LS * mRC * dstiff, hs: DAMP.RC_HS * mRC ** 0.3 * mRH ** 0.45 * dstiff, knee: 0.12 },
+      rR: { ls: DAMP.RR_LS * mRR * dstiff, hs: DAMP.RR_HS * mRR * dstiff, knee: 0.12 },
       rigid: !!opts.rigid,
     };
   }
@@ -885,11 +1009,18 @@ const Phys = (() => {
 })();
 // </physics>
 </script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // ============================================================================ basics
-const P = Phys, GEO = P.GEO, STOCK = P.STOCK;
+const P = Phys, GEO = P.GEO;
+// the lab sets each end separately: fork springs + two clickers, shock spring + preload + three clickers
+const STOCK = (({ comp, reb, ...rest }) => ({ ...rest, forkSpring: 0.45, fComp: comp, fReb: reb, rComp: comp, rHsc: comp, rReb: reb }))(P.STOCK);
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -898,6 +1029,7 @@ const mm = (m) => Math.round(m * 1000);
 const TAU = Math.PI * 2;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const phoneQ = matchMedia('(max-width: 760px)');
+const tabQ = matchMedia('(max-width: 1180px)'); // cockpit shows one panel at a time
 const COL = { gold: '#e3ad4b', blue: '#5ea4e8', bad: '#ef6150', warn: '#f0a35c', good: '#8cc88a', text: '#e8dcc6', dim: '#9c9180', faint: '#6b6355' };
 const FLOOR_Y = -0.55;
 
@@ -1072,8 +1204,11 @@ const M = {
 };
 M.kneeGuard = std('#4a4d55', 0.6, 0.2);
 const XRAY_MATS = [M.plastic, M.shade, M.graphic, M.seat, M.jersey, M.pants, M.boot, M.glove, M.visor, M.kneeGuard, M.can, M.pipe];
+// x-ray: bodywork and rider almost vanish; frame and engine turn to glass so the shock inside shows
+const XRAY_SOFT = [];
 function setXray(on) {
   for (const m of XRAY_MATS) { m.transparent = on; m.opacity = on ? 0.12 : 1; m.depthWrite = !on; m.needsUpdate = true; }
+  for (const m of XRAY_SOFT) { m.transparent = on; m.opacity = on ? 0.3 : 1; m.depthWrite = !on; m.needsUpdate = true; }
   bike.forkSpringsVisible(on);
 }
 
@@ -1086,6 +1221,11 @@ function springColor(rate) {
   return c;
 }
 const wireFor = (rate) => 0.0062 + (rate - 3.8) * 0.0011;
+// fork springs: pale gold when soft, deep gold when stiff
+function forkSpringColor(rate) {
+  const t = clamp((rate - 0.38) / 0.18, 0, 1);
+  return new THREE.Color().lerpColors(new THREE.Color('#f3d58f'), new THREE.Color('#b77a22'), t);
+}
 
 // ============================================================================ mesh helpers
 const UP = new THREE.Vector3(0, 1, 0), tv = new THREE.Vector3();
@@ -1250,44 +1390,61 @@ const picks = [];          // meshes the pointer can hit
 const STATION_POS = {};
 function pickable(mesh, kind, data = {}) { mesh.userData.pick = { kind, ...data }; picks.push(mesh); return mesh; }
 
-// spring rack
+// spring rack: shock springs on the top row, fork springs (sold in pairs) below
 const rack = (() => {
   const g = new THREE.Group(); g.position.set(-4.4, FLOOR_Y, -3.7); g.rotation.y = 0.22; scene.add(g);
-  const board = box(3.1, 1.7, 0.06, std('#1e1d1a', 0.85)); board.position.set(0, 1.6, 0); g.add(board);
-  const pegs = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.01, 6), std('#0a0a0a', 1), 18 * 9);
-  { const o = new THREE.Object3D(); let k = 0; for (let i = 0; i < 18; i++) for (let j = 0; j < 9; j++) { o.position.set(-1.45 + i * 0.17, 0.85 + j * 0.17, 0.031); o.rotation.x = Math.PI / 2; o.updateMatrix(); pegs.setMatrixAt(k++, o.matrix); } }
+  const board = box(3.1, 1.8, 0.06, std('#1e1d1a', 0.85)); board.position.set(0, 1.65, 0); g.add(board);
+  const pegs = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.01, 6), std('#0a0a0a', 1), 18 * 10);
+  { const o = new THREE.Object3D(); let k = 0; for (let i = 0; i < 18; i++) for (let j = 0; j < 10; j++) { o.position.set(-1.45 + i * 0.17, 0.85 + j * 0.17, 0.031); o.rotation.x = Math.PI / 2; o.updateMatrix(); pegs.setMatrixAt(k++, o.matrix); } }
   g.add(pegs);
-  for (const x of [-1.4, 1.4]) { const leg = box(0.07, 2.5, 0.07, M.steel); leg.position.set(x, 1.25, -0.04); g.add(leg); }
+  for (const x of [-1.4, 1.4]) { const leg = box(0.07, 2.6, 0.07, M.steel); leg.position.set(x, 1.3, -0.04); g.add(leg); }
   const sign = textPlane(1.6, 0.26, 512, 84, (c, w, h) => {
     c.fillStyle = '#e8dcc6'; c.font = `800 46px ${SANS}`; c.textBaseline = 'middle'; c.fillText('SPRINGS', 8, h / 2 + 2);
-    c.fillStyle = '#9c9180'; c.font = `500 26px ${MONO}`; c.textAlign = 'right'; c.fillText('shock · kg/mm', w - 8, h / 2 + 2);
+    c.fillStyle = '#9c9180'; c.font = `500 26px ${MONO}`; c.textAlign = 'right'; c.fillText('kg/mm', w - 8, h / 2 + 2);
   });
-  sign.position.set(-0.6, 2.62, 0.04); g.add(sign);
-  const rates = [4.2, 4.6, 5.0, 5.4, 5.8, 6.2, 6.6];
-  const items = rates.map((rate, i) => {
+  sign.position.set(-0.6, 2.72, 0.04); g.add(sign);
+  const rowLabel = (text, color, y) => {
+    const t = textPlane(0.5, 0.1, 200, 40, (c, w, h) => { c.fillStyle = color; c.font = `600 26px ${MONO}`; c.textBaseline = 'middle'; c.fillText(text, 4, h / 2 + 1); });
+    t.position.set(-1.12, y, 0.04); g.add(t);
+  };
+  rowLabel('SHOCK', '#5ea4e8', 2.42); rowLabel('FORK', '#e3ad4b', 1.36);
+  const label = (x, y, txt) => {
+    const l = textPlane(0.3, 0.11, 128, 48, (c, w, h, on) => {
+      c.fillStyle = on ? '#e3ad4b' : 'rgba(232,220,198,0.9)'; c.font = `600 32px ${MONO}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(txt, w / 2, h / 2 + 2);
+    });
+    l.position.set(x, y, 0.04); g.add(l); return l;
+  };
+  const items = [];
+  [4.2, 4.6, 5.0, 5.4, 5.8, 6.2, 6.6].forEach((rate, i) => {
     const x = -1.2 + i * 0.4;
     const mat = std(springColor(rate), 0.32, 0.45, { emissive: '#000000' });
     const coil = new THREE.Mesh(helixGeo(8.5, 0.045, wireFor(rate) * 1.15, 0.3), mat);
-    coil.position.set(x, 1.5, 0.11); coil.castShadow = true; g.add(coil);
+    coil.position.set(x, 2.05, 0.11); coil.castShadow = true; g.add(coil);
     const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.36, 8), new THREE.MeshBasicMaterial({ visible: false }));
     hit.position.copy(coil.position); g.add(hit);
     pickable(hit, 'spring', { rate, mat });
-    const peg = rod(0.012, M.chrome); span(peg, [x, 1.75, 0.03], [x, 1.75, 0.16]); g.add(peg);
-    const label = textPlane(0.3, 0.12, 128, 52, (c, w, h, on) => {
-      c.fillStyle = on ? '#e3ad4b' : 'rgba(232,220,198,0.9)'; c.font = `600 34px ${MONO}`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(rate.toFixed(1), w / 2, h / 2 + 2);
-    });
-    label.position.set(x, 1.18, 0.04); g.add(label);
-    return { rate, coil, label };
+    const peg = rod(0.012, M.chrome); span(peg, [x, 2.3, 0.03], [x, 2.3, 0.16]); g.add(peg);
+    items.push({ kind: 'shock', rate, coils: [coil], label: label(x, 1.75, rate.toFixed(1)) });
   });
-  STATION_POS.rack = new THREE.Vector3(-4.5, FLOOR_Y + 2.95, -3.6);
+  [0.41, 0.43, 0.45, 0.47, 0.49, 0.51].forEach((rate, i) => {
+    const x = -1.0 + i * 0.4;
+    const mat = std(forkSpringColor(rate), 0.32, 0.55, { emissive: '#000000' });
+    const coils = [-0.055, 0.055].map((dx) => { const c = new THREE.Mesh(helixGeo(16, 0.019, 0.0028 + (rate - 0.38) * 0.012, 0.44), mat); c.position.set(x + dx, 1.15, 0.09); c.castShadow = true; g.add(c); return c; });
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.48, 0.1), new THREE.MeshBasicMaterial({ visible: false }));
+    hit.position.set(x, 1.15, 0.09); g.add(hit);
+    pickable(hit, 'fspring', { rate, mat });
+    const peg = rod(0.01, M.chrome); span(peg, [x - 0.08, 1.38, 0.03], [x - 0.08, 1.38, 0.14]); g.add(peg);
+    items.push({ kind: 'fork', rate, coils, label: label(x, 0.86, rate.toFixed(2)) });
+  });
+  STATION_POS.rack = new THREE.Vector3(-4.5, FLOOR_Y + 3.05, -3.6);
   pickable(board, 'station', { key: 'rack' });
   return {
     group: g,
-    sync(rate) {
+    sync(rate, frate) {
       for (const it of items) {
-        const on = Math.abs(it.rate - rate) < 0.05;
-        it.coil.visible = !on;
+        const on = it.kind === 'shock' ? Math.abs(it.rate - rate) < 0.05 : Math.abs(it.rate - frate) < 0.005;
+        it.coils.forEach((c) => { c.visible = !on; });
         it.label.userData.tex.redraw(on);
       }
     },
@@ -1390,124 +1547,473 @@ const hoist = (() => {
 })();
 
 // ============================================================================ the bike
+// A modern 450 motocrosser: aluminium twin-spar frame, upside-down fork, linkage shock, 21/18 in wheels.
+// All coordinates are in the chassis frame shared with the physics (metres, x forward, y up, +z is the
+// bike's right-hand side, where the exhaust lives).
+const phys = (color, rough = 0.4, metal = 0, extra = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: rough, metalness: metal, ...extra });
+function mesh(geo, mat, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; return m; }
+const RB = (w, h, d, r = 0.006, seg = 2) => new RoundedBoxGeometry(w, h, d, seg, Math.max(1e-4, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)));
+function pathShape(cmds) {
+  const s = new THREE.Shape(); let i = 0;
+  while (i < cmds.length) {
+    const c = cmds[i++];
+    if (c === 'M') { s.moveTo(cmds[i], cmds[i + 1]); i += 2; }
+    else if (c === 'L') { s.lineTo(cmds[i], cmds[i + 1]); i += 2; }
+    else if (c === 'Q') { s.quadraticCurveTo(cmds[i], cmds[i + 1], cmds[i + 2], cmds[i + 3]); i += 4; }
+    else if (c === 'C') { s.bezierCurveTo(cmds[i], cmds[i + 1], cmds[i + 2], cmds[i + 3], cmds[i + 4], cmds[i + 5]); i += 6; }
+  }
+  return s;
+}
+// extruded panel with rounded edges and smooth shading on its curves
+function panel(shape, depth, mat, bevel = 0.006, curveSegments = 20) {
+  let g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel * 0.9, bevelSegments: 3, curveSegments });
+  g.translate(0, 0, -depth / 2);
+  g = toCreasedNormals(g, Math.PI / 3.2);
+  return mesh(g, mat);
+}
+function lathe(profile, mat, seg = 32) {
+  const g = new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+  return mesh(g, mat);
+}
+// orient a mesh whose local +Y is its long axis so it runs from a to b (no scaling)
+function aim(m, a, b) {
+  tv.set(b[0] - a[0], b[1] - a[1], (b[2] || 0) - (a[2] || 0)).normalize();
+  m.quaternion.setFromUnitVectors(UP, tv);
+  m.position.set(a[0], a[1], a[2] || 0);
+  return m;
+}
+// a straight cylinder between two points, built at its real length (for parts that never move)
+function tube(a, b, r, mat, seg = 14, r2 = r) {
+  const L = Math.hypot(b[0] - a[0], b[1] - a[1], (b[2] || 0) - (a[2] || 0));
+  const g = new THREE.CylinderGeometry(r2, r, L, seg); g.translate(0, L / 2, 0);
+  return aim(mesh(g, mat), a, b);
+}
+function bent(points, r, mat, seg = 48, radial = 12) {
+  const c = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(p[0], p[1], p[2] || 0)));
+  return mesh(new THREE.TubeGeometry(c, seg, r, radial, false), mat);
+}
+// rounded-rectangle cross-section for swept parts (x = across the sweep's normal, y = along its binormal)
+function roundRect(hx, hy, r) {
+  const s = new THREE.Shape();
+  s.moveTo(-hx + r, -hy); s.lineTo(hx - r, -hy); s.quadraticCurveTo(hx, -hy, hx, -hy + r); s.lineTo(hx, hy - r); s.quadraticCurveTo(hx, hy, hx - r, hy);
+  s.lineTo(-hx + r, hy); s.quadraticCurveTo(-hx, hy, -hx, hy - r); s.lineTo(-hx, -hy + r); s.quadraticCurveTo(-hx, -hy, -hx + r, -hy);
+  return s;
+}
+// a rounded bar swept along a 3D curve (helmet chin bar, goggle frame)
+function band(points, hx, hy, mat, seg = 40) {
+  const c = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(p[0], p[1], p[2] || 0)));
+  let g = new THREE.ExtrudeGeometry(roundRect(hx, hy, Math.min(hx, hy) * 0.8), { steps: seg, bevelEnabled: false, extrudePath: c, curveSegments: 4 });
+  g = toCreasedNormals(g, Math.PI / 3);
+  return mesh(g, mat);
+}
+// a thin arched shell along a centreline in the bike's side plane: fenders.
+// hw(t) is the half width, rise(t) the height of the arch, `out` a point the shell curves away from (the wheel)
+function fenderShell(pts, hw, rise, thick, out, mat, segs = 48, around = 16) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, y]) => new THREE.Vector3(x, y, 0)));
+  const mid = curve.getPointAt(0.5), mt = curve.getTangentAt(0.5);
+  const flip = (-mt.y * (mid.x - out[0]) + mt.x * (mid.y - out[1])) < 0 ? -1 : 1;
+  const pos = [], idx = [], ringN = 2 * (around + 1), prof = [];
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs, c = curve.getPointAt(t), tg = curve.getTangentAt(t);
+    const nx = -tg.y * flip, ny = tg.x * flip, w = hw(t), r = rise(t);
+    const ring = [];
+    for (let side = 0; side < 2; side++) for (let k = 0; k <= around; k++) {
+      const ph = -Math.PI / 2 + (Math.PI * (side ? around - k : k)) / around;
+      const a = Math.sin(ph), h = r * Math.cos(ph) - (side ? thick : 0), z = a * (w - (side ? thick * 0.6 : 0));
+      pos.push(c.x + nx * h, c.y + ny * h, z); ring.push([z, h]);
+    }
+    if (i === 0) prof.push(...ring);
+  }
+  const quad = (a, b, c2, d) => { if (flip > 0) idx.push(a, b, d, b, c2, d); else idx.push(a, d, b, b, d, c2); };
+  for (let i = 0; i < segs; i++) for (let k = 0; k < ringN; k++) {
+    const k2 = (k + 1) % ringN, A = i * ringN + k, B = i * ringN + k2, C = (i + 1) * ringN + k2, D = (i + 1) * ringN + k;
+    quad(A, B, C, D);
+  }
+  // end caps: triangulate the arch profile, then wind each triangle to face away from the shell
+  const tris = THREE.ShapeUtils.triangulateShape(prof.map(([x, y]) => new THREE.Vector2(x, y)), []);
+  const va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+  for (const [end, base] of [[0, 0], [1, segs * ringN]]) {
+    const want = curve.getTangentAt(end).multiplyScalar(end ? 1 : -1);
+    for (const [a, b, c2] of tris) {
+      va.fromArray(pos, (base + a) * 3); vb.fromArray(pos, (base + b) * 3); vc.fromArray(pos, (base + c2) * 3);
+      const n = vb.sub(va).cross(vc.sub(va));
+      if (n.dot(want) >= 0) idx.push(base + a, base + b, base + c2); else idx.push(base + a, base + c2, base + b);
+    }
+  }
+  let g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
+  g = toCreasedNormals(g, Math.PI / 4);
+  return mesh(g, mat);
+}
+function fitTex(t, x0, y0, x1, y1) { t.repeat.set(1 / (x1 - x0), 1 / (y1 - y0)); t.offset.set(-x0 / (x1 - x0), -y0 / (y1 - y0)); t.needsUpdate = true; return t; }
+
+// paint
+const BK = {
+  white: phys('#efe9dc', 0.3, 0, { clearcoat: 0.8, clearcoatRoughness: 0.18 }),
+  blackPl: phys('#1a1b1e', 0.5, 0, { clearcoat: 0.3, clearcoatRoughness: 0.4 }),
+  alu: std('#c3c7cc', 0.3, 0.85),
+  frame: std('#c3c7cc', 0.3, 0.85),
+  subframe: std('#5b5f66', 0.35, 0.8),
+  aluDark: std('#5b5f66', 0.35, 0.8),
+  anoBlack: std('#1d1e22', 0.32, 0.7),
+  case: std('#3c3e43', 0.42, 0.65),
+  cover: std('#77797e', 0.38, 0.75),
+  head: std('#2a2b2f', 0.4, 0.6),
+  gold: std('#e3ad4b', 0.22, 0.9),
+  forkOuter: std('#e3ad4b', 0.22, 0.9),
+  goldMatte: std('#c9953c', 0.35, 0.85),
+  inner: std('#2c2a27', 0.16, 0.95),
+  chrome: std('#e4e1da', 0.08, 1),
+  steel: std('#9a9ea4', 0.3, 0.9),
+  disc: std('#b9bcc0', 0.28, 0.92),
+  rubber: std('#141414', 0.92),
+  seat: std('#141517', 0.78),
+  pipe: std('#b9a893', 0.26, 0.9),
+  can: std('#c7c9cc', 0.32, 0.85),
+  canEnd: std('#26272a', 0.4, 0.7),
+  rad: std('#3a3c40', 0.55, 0.6),
+  hose: std('#151618', 0.6),
+  sprocket: std('#b06a2c', 0.32, 0.8),
+  chain: std('#4b4740', 0.45, 0.8),
+  shockBody: std('#25262a', 0.28, 0.75),
+  shockBlue: std('#3f7fc4', 0.28, 0.7),
+};
+
+// graphics, drawn for the right side and mirrored for the left so numbers read correctly
+function decal(w, h, box, draw) {
+  const make = (mirror) => {
+    const t = canvasTex(w, h, (c, W, H) => { c.save(); if (mirror) { c.translate(W, 0); c.scale(-1, 1); } draw(c, W, H, mirror); c.restore(); });
+    TEXT_TEX.push(t); fitTex(t, ...box); return phys('#ffffff', 0.3, 0, { map: t, clearcoat: 0.8, clearcoatRoughness: 0.18 });
+  };
+  return [make(true), make(false)];
+}
+const SHROUD_BOX = [0.04, 0.02, 0.6, 0.48];
+const shroudMats = decal(512, 420, SHROUD_BOX, (c, W, H) => {
+  c.fillStyle = '#efe9dc'; c.fillRect(0, 0, W, H);
+  const X = (x) => ((x - SHROUD_BOX[0]) / (SHROUD_BOX[2] - SHROUD_BOX[0])) * W, Y = (y) => H - ((y - SHROUD_BOX[1]) / (SHROUD_BOX[3] - SHROUD_BOX[1])) * H;
+  c.fillStyle = '#1b1c20';
+  c.beginPath(); c.moveTo(X(0.04), Y(0.24)); c.quadraticCurveTo(X(0.3), Y(0.12), X(0.6), Y(0.36)); c.lineTo(X(0.6), Y(0.0)); c.lineTo(X(0.04), Y(0.0)); c.closePath(); c.fill();
+  c.strokeStyle = '#e3ad4b'; c.lineWidth = 14;
+  c.beginPath(); c.moveTo(X(0.04), Y(0.275)); c.quadraticCurveTo(X(0.3), Y(0.155), X(0.6), Y(0.395)); c.stroke();
+  c.fillStyle = '#e3ad4b'; c.font = `900 italic 54px ${SANS}`; c.textBaseline = 'middle';
+  c.save(); c.translate(X(0.2), Y(0.12)); c.rotate(-0.12); c.fillStyle = '#efe9dc'; c.fillText('LAB', 0, 0); c.restore();
+});
+const PLATE_BOX = [-0.62, 0.05, -0.04, 0.37];
+const plateMats = decal(512, 300, PLATE_BOX, (c, W, H) => {
+  c.fillStyle = '#efe9dc'; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#e3ad4b'; c.fillRect(0, H * 0.82, W, H * 0.06);
+  c.fillStyle = '#1b1c20'; c.font = `900 ${H * 0.62}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('01', W * 0.5, H * 0.43);
+});
+const FRONT_BOX = [-0.13, 0, 0.13, 0.27];
+const frontPlateMat = decal(256, 266, FRONT_BOX, (c, W, H) => {
+  c.fillStyle = '#efe9dc'; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#1b1c20'; c.font = `900 ${H * 0.5}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('01', W / 2, H * 0.47);
+  c.fillStyle = '#e3ad4b'; c.fillRect(W * 0.18, H * 0.78, W * 0.64, H * 0.05);
+})[1];
+const louverTex = canvasTex(128, 128, (c, W, H) => {
+  c.fillStyle = '#2b2d31'; c.fillRect(0, 0, W, H);
+  for (let y = 0; y < H; y += 8) { c.fillStyle = '#0d0e10'; c.fillRect(0, y, W, 4); }
+}, true);
+BK.rad.map = louverTex;
+
+// rider kit
+// A rider in motocross kit: helmet with peak and goggles, loose jersey, knee braces, tall boots.
+const RD = {
+  jersey: std('#24262c', 0.86), jerseyGold: std('#d9a145', 0.8),
+  pants: std('#2c2e33', 0.88), brace: std('#17181b', 0.45, 0.3), braceGold: std('#e3ad4b', 0.35, 0.6),
+  boot: std('#e9e3d6', 0.42), bootDark: std('#1b1c1f', 0.6), buckle: std('#b8bcc2', 0.3, 0.9),
+  glove: std('#1d1e22', 0.75), gloveGold: std('#d9a145', 0.7),
+  lens: std('#d98a3a', 0.08, 1), goggle: std('#141518', 0.5), strap: std('#d9a145', 0.75), neck: std('#1d1e22', 0.6),
+  shell: phys('#efe9dc', 0.25, 0, { clearcoat: 0.9, clearcoatRoughness: 0.12 }),
+};
+const jerseyTex = canvasTex(512, 256, (c, W, H) => {
+  // lathe UVs: u runs around the body (u = 0.5 faces forward), v runs pelvis -> neck
+  // (u = 0.25 is the chest, 0.75 the back, 0 and 0.5 the sides)
+  c.fillStyle = '#24262c'; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#3a3d45'; for (const u of [0, 0.5, 1]) c.fillRect(W * u - W * 0.05, 0, W * 0.1, H);
+  c.fillStyle = '#d9a145'; c.fillRect(0, H * 0.3, W, H * 0.06);
+  for (const u of [0, 0.5, 1]) c.fillRect(W * u - W * 0.012, 0, W * 0.024, H);
+  c.fillStyle = '#e8dcc6'; c.font = `900 ${H * 0.26}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('01', W * 0.75, H * 0.6);
+});
+TEXT_TEX.push(jerseyTex);
+RD.jerseyBody = std('#ffffff', 0.86, 0, { map: jerseyTex });
+const helmetTex = canvasTex(512, 256, (c, W, H) => {
+  // sphere UVs: u = 0.5 is the front of the helmet, canvas top the crown, H * 0.5 the brow line
+  c.fillStyle = '#efe9dc'; c.fillRect(0, 0, W, H);
+  // a swoosh along each side, low on the shell
+  for (const u of [0.25, 0.75]) {
+    const d = u < 0.5 ? 1 : -1; // run towards the front on both sides
+    c.lineCap = 'round';
+    c.strokeStyle = '#1b1c20'; c.lineWidth = H * 0.05; c.beginPath(); c.moveTo(W * (u - d * 0.17), H * 0.76); c.quadraticCurveTo(W * u, H * 0.66, W * (u + d * 0.1), H * 0.6); c.stroke();
+    c.strokeStyle = '#e3ad4b'; c.lineWidth = H * 0.02; c.beginPath(); c.moveTo(W * (u - d * 0.17), H * 0.69); c.quadraticCurveTo(W * u, H * 0.59, W * (u + d * 0.1), H * 0.53); c.stroke();
+  }
+  // stripes over the crown, front to back
+  for (const u of [0.0, 0.5, 1.0]) { c.fillStyle = '#e3ad4b'; c.fillRect(W * u - W * 0.03, 0, W * 0.06, H * 0.42); c.fillStyle = '#1b1c20'; c.fillRect(W * u - W * 0.007, 0, W * 0.014, H * 0.42); }
+  // eye port and mouth opening
+  const x0 = W * 0.375, x1 = W * 0.625, y0 = H * 0.41, y1 = H * 0.8, r = H * 0.08;
+  c.fillStyle = '#101114'; c.beginPath(); c.moveTo(x0 + r, y0); c.lineTo(x1 - r, y0); c.quadraticCurveTo(x1, y0, x1, y0 + r); c.lineTo(x1, y1); c.lineTo(x0, y1); c.lineTo(x0, y0 + r); c.quadraticCurveTo(x0, y0, x0 + r, y0); c.fill();
+  // neck roll
+  c.fillStyle = '#1b1c20'; c.fillRect(0, H * 0.88, W, H * 0.12);
+});
+RD.helmet = phys('#ffffff', 0.25, 0, { map: helmetTex, clearcoat: 0.9, clearcoatRoughness: 0.12 });
+RD.helmetDark = phys('#1b1c20', 0.3, 0, { clearcoat: 0.8, clearcoatRoughness: 0.2 });
+
 const bike = (() => {
   const g = new THREE.Group(); scene.add(g);
   const add = (m) => { g.add(m); return m; };
-  const both = (fn) => [fn(-1), fn(1)];
+  const LR = [-1, 1];
 
-  // frame
-  const tubes = (pts, r, zs) => {
-    for (const z of zs) for (let i = 0; i < pts.length - 1; i++) {
-      const a = pts[i], b = pts[i + 1];
-      add(span(rod(r, M.frame), [a[0], a[1], a[2] ?? z], [b[0], b[1], b[2] ?? z]));
-    }
-  };
-  tubes([[0.45, 0.36], [0.17, 0.25], [0, 0.12], [-0.07, -0.02], [GEO.pivotX, GEO.pivotY]], 0.024, [-0.07, 0.07]);
-  tubes([[0.47, 0.28], [0.38, 0.05], [0.34, -0.18], [0.26, -0.31], [0.02, -0.33], [-0.08, -0.22]], 0.016, [-0.055, 0.055]);
-  tubes([[0.02, 0.21], [-0.6, 0.3]], 0.012, [-0.1, 0.1]);
-  tubes([[-0.07, 0.0], [-0.42, 0.24]], 0.011, [-0.1, 0.1]);
-  add(span(rod(0.035, M.frame), [TOP[0], TOP[1], 0], [CLAMP_LO[0], CLAMP_LO[1], 0]));
-
-  // engine
-  add(slab([0.02, -0.3, 0.3, -0.3, 0.36, -0.14, 0.31, -0.02, 0.06, -0.02, -0.04, -0.12], 0.2, M.engine));
-  add(slab([0.12, -0.04, 0.3, -0.04, 0.34, 0.12, 0.16, 0.14], 0.17, M.fin));
-  add(slab([0.15, 0.12, 0.35, 0.1, 0.37, 0.2, 0.18, 0.22], 0.15, M.engine));
-  { const c = rod(0.075, M.fin, 24); span(c, [0.17, -0.18, 0.08], [0.17, -0.18, 0.14]); add(c); }
-  { const c = rod(0.06, M.fin, 24); span(c, [0.06, -0.12, -0.08], [0.06, -0.12, -0.13]); add(c); }
-  // radiators peeking out under the shrouds
-  both((s) => { const r = box(0.05, 0.26, 0.05, std('#2e3034', 0.5, 0.6)); r.position.set(0.36, 0.13, s * 0.15); r.rotation.z = 0.25; return add(r); });
-
-  // exhaust on the right
+  // ---------------------------------------------------------------- frame
   {
-    const curve = new THREE.CatmullRomCurve3([[0.34, 0.13, 0.06], [0.45, 0.03, 0.1], [0.36, -0.07, 0.14], [0.1, -0.03, 0.16], [-0.2, 0.12, 0.17]].map((p) => new THREE.Vector3(...p)));
-    const h = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.021, 10), M.pipe); h.castShadow = true; add(h);
-    add(span(rod(0.052, M.can, 20), [-0.2, 0.125, 0.17], [-0.79, 0.21, 0.17]));
-    add(span(rod(0.034, M.black, 16), [-0.79, 0.21, 0.17], [-0.83, 0.215, 0.17]));
+    const sparShape = new THREE.Shape();
+    { const w = 0.016, h = 0.034, r = 0.008; sparShape.moveTo(-w + r, -h); sparShape.lineTo(w - r, -h); sparShape.quadraticCurveTo(w, -h, w, -h + r); sparShape.lineTo(w, h - r); sparShape.quadraticCurveTo(w, h, w - r, h); sparShape.lineTo(-w + r, h); sparShape.quadraticCurveTo(-w, h, -w, h - r); sparShape.lineTo(-w, -h + r); sparShape.quadraticCurveTo(-w, -h, -w + r, -h); }
+    for (const s of LR) {
+      const pts = [[0.47, 0.31, 0.04], [0.36, 0.285, 0.085], [0.2, 0.225, 0.112], [0.06, 0.13, 0.112], [-0.06, 0.0, 0.105], [-0.095, -0.12, 0.1], [-0.1, -0.2, 0.098]]
+        .map(([x, y, z]) => new THREE.Vector3(x, y, s * z));
+      const curve = new THREE.CatmullRomCurve3(pts);
+      let geo = new THREE.ExtrudeGeometry(sparShape, { steps: 60, bevelEnabled: false, extrudePath: curve });
+      add(mesh(geo, BK.frame));
+      // engine cradle rails
+      add(bent([[0.4, 0.04, s * 0.03], [0.36, -0.12, s * 0.05], [0.3, -0.27, s * 0.052], [0.12, -0.335, s * 0.052], [-0.02, -0.32, s * 0.052], [-0.085, -0.24, s * 0.07]], 0.014, BK.frame, 40, 10));
+      // subframe
+      add(bent([[0.04, 0.19, s * 0.1], [-0.3, 0.27, s * 0.085], [-0.66, 0.3, s * 0.07]], 0.011, BK.subframe, 24, 8));
+      add(tube([-0.06, 0.02, s * 0.1], [-0.46, 0.27, s * 0.08], 0.01, BK.subframe, 8));
+      // footpeg mount + peg
+      const peg = mesh(RB(0.06, 0.022, 0.09, 0.006), BK.steel); peg.position.set(PEG[0], PEG[1] - 0.005, s * 0.16); add(peg);
+      for (let i = 0; i < 4; i++) { const t = mesh(new THREE.BoxGeometry(0.004, 0.008, 0.088), BK.anoBlack); t.position.set(PEG[0] - 0.024 + i * 0.016, PEG[1] + 0.009, s * 0.16); add(t); }
+      add(tube([PEG[0], PEG[1], s * 0.1], [PEG[0], PEG[1], s * 0.12], 0.02, BK.frame, 12));
+    }
+    // single down tube that splits into the cradle
+    add(bent([[0.48, 0.28, 0], [0.44, 0.15, 0], [0.4, 0.04, 0]], 0.019, BK.frame, 16, 12));
+    // steering head
+    add(tube(CLAMP_LO, [TOP[0] - DX * 0.01, TOP[1] - DY * 0.01], 0.034, BK.frame, 20));
+    // swingarm pivot bolt
+    add(tube([GEO.pivotX, GEO.pivotY, -0.13], [GEO.pivotX, GEO.pivotY, 0.13], 0.012, BK.steel, 10));
+    for (const s of LR) { const n = mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.012, 6), BK.anoBlack); n.rotation.x = Math.PI / 2; n.position.set(GEO.pivotX, GEO.pivotY, s * 0.13); add(n); }
   }
 
-  // bodywork
-  add(slab([0.46, 0.33, 0.62, 0.335, 0.8, 0.29, 0.96, 0.2, 0.95, 0.18, 0.79, 0.265, 0.62, 0.305, 0.47, 0.3], 0.12, M.plastic, 0.01));
-  add(slab([-0.25, 0.34, -0.66, 0.345, -0.99, 0.43, -1.0, 0.405, -0.7, 0.3, -0.3, 0.29], 0.2, M.plastic, 0.008));
-  add(slab([-0.05, 0.3, -0.58, 0.335, -0.5, 0.08, -0.16, 0.04, -0.06, 0.12], 0.28, M.shade, 0.012));
-  add(slab([0.2, 0.355, 0.05, 0.36, -0.66, 0.345, -0.67, 0.31, -0.2, 0.3, 0.17, 0.31], 0.2, M.seat, 0.016));
-  add(slab([0.45, 0.43, 0.28, 0.395, 0.1, 0.345, 0.12, 0.17, 0.3, 0.08, 0.43, 0.15, 0.49, 0.3], 0.32, M.plastic, 0.012));
-  add(slab([0.13, 0.26, 0.42, 0.33, 0.45, 0.25, 0.3, 0.19, 0.12, 0.2], 0.344, M.graphic, 0.004));
-  add(slab([0.43, 0.52, 0.53, 0.49, 0.58, 0.3, 0.5, 0.27], 0.24, M.plastic, 0.01));
-  const decalTex = canvasTex(256, 160, (c, w, h) => {
-    c.fillStyle = '#26272b'; c.font = `900 128px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('01', w / 2, h / 2 + 6);
-  });
-  TEXT_TEX.push(decalTex);
-  const decalMat = new THREE.MeshStandardMaterial({ map: decalTex, transparent: true, roughness: 0.5 });
-  XRAY_MATS.push(decalMat);
-  both((s) => { const d = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.16), decalMat); d.position.set(-0.32, 0.18, s * 0.158); if (s < 0) d.rotation.y = Math.PI; d.rotation.z = s * 0.06; return add(d); });
+  // ---------------------------------------------------------------- engine
+  {
+    const cases = panel(pathShape(['M', 0.0, -0.28, 'Q', 0.02, -0.31, 0.12, -0.31, 'L', 0.27, -0.31, 'Q', 0.35, -0.3, 0.36, -0.22, 'Q', 0.37, -0.12, 0.31, -0.06, 'L', 0.13, -0.04, 'Q', 0.02, -0.05, -0.03, -0.12, 'Q', -0.05, -0.2, 0.0, -0.28]), 0.15, BK.case, 0.02);
+    add(cases);
+    // clutch cover (right) and ignition cover (left)
+    const clutch = lathe([[0, 0], [0.084, 0], [0.088, 0.008], [0.082, 0.02], [0.05, 0.03], [0, 0.031]], BK.cover, 36); clutch.rotation.x = Math.PI / 2; clutch.position.set(0.2, -0.18, 0.095); add(clutch);
+    const ign = lathe([[0, 0], [0.072, 0], [0.074, 0.008], [0.064, 0.022], [0, 0.026]], BK.cover, 32); ign.rotation.x = -Math.PI / 2; ign.position.set(0.07, -0.15, -0.095); add(ign);
+    for (const [x, y, z, s] of [[0.2, -0.18, 0.126, 1], [0.07, -0.15, -0.122, -1]]) { const b = mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.006, 16), BK.gold); b.rotation.x = Math.PI / 2; b.position.set(x, y, z + s * 0.002); add(b); }
+    // cylinder (tilted forward), head and cam cover
+    const cyl = new THREE.Group(); cyl.position.set(0.215, -0.05, 0); cyl.rotation.z = -0.2; add(cyl);
+    const at = (m, x, y, z = 0) => { m.position.set(x, y, z); cyl.add(m); return m; };
+    at(mesh(RB(0.13, 0.13, 0.12, 0.02), BK.case), 0, 0.06);
+    for (let i = 0; i < 4; i++) at(mesh(RB(0.15, 0.008, 0.13, 0.003), BK.case), 0, 0.025 + i * 0.026);
+    at(mesh(RB(0.17, 0.07, 0.15, 0.02), BK.head), 0, 0.16);
+    at(mesh(RB(0.15, 0.035, 0.12, 0.014), BK.cover), -0.005, 0.205);
+    // carb/throttle body and intake boot back to the airbox
+    add(tube([0.12, 0.13, 0], [-0.04, 0.2, 0], 0.03, BK.hose, 16));
+    // skid plate
+    add(panel(pathShape(['M', 0.34, -0.25, 'Q', 0.34, -0.33, 0.25, -0.345, 'L', 0.0, -0.345, 'Q', -0.04, -0.34, -0.05, -0.3, 'L', 0.0, -0.3, 'L', 0.3, -0.28, 'Z']), 0.13, BK.blackPl, 0.01));
+    // radiators behind the shrouds, hoses
+    for (const s of LR) {
+      const r = mesh(RB(0.045, 0.27, 0.13, 0.006), BK.rad); r.position.set(0.4, 0.17, s * 0.11); r.rotation.z = 0.32; add(r);
+      add(bent([[0.33, 0.06, s * 0.1], [0.28, 0.0, s * 0.07], [0.26, -0.03, s * 0.05]], 0.011, BK.hose, 12, 8));
+    }
+    // gear lever (left) and rear brake pedal (right)
+    add(tube([PEG[0] + 0.1, PEG[1] + 0.07, -0.105], [PEG[0] + 0.22, PEG[1] + 0.05, -0.14], 0.007, BK.steel, 8));
+    add(tube([PEG[0] + 0.04, PEG[1] - 0.01, 0.14], [PEG[0] + 0.22, PEG[1] - 0.02, 0.15], 0.008, BK.steel, 8));
+  }
 
-  // fork
+  // ---------------------------------------------------------------- exhaust (right side)
+  {
+    add(bent([[0.31, 0.16, 0.03], [0.39, 0.12, 0.06], [0.42, 0.02, 0.1], [0.37, -0.08, 0.13], [0.24, -0.08, 0.15], [0.08, -0.01, 0.155], [-0.1, 0.09, 0.158], [-0.24, 0.155, 0.16]], 0.02, BK.pipe, 80, 14));
+    const can = new THREE.Group(); add(can);
+    const canLen = 0.5;
+    const body = mesh(new THREE.CylinderGeometry(0.05, 0.046, canLen, 28), BK.can); body.scale.z = 0.8; body.position.y = canLen / 2; can.add(body);
+    const cap = lathe([[0, 0], [0.047, 0], [0.04, 0.04], [0.02, 0.05], [0, 0.05]], BK.canEnd, 28); cap.scale.z = 0.8; cap.position.y = canLen; can.add(cap);
+    const tip = mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 16), BK.canEnd); tip.position.y = canLen + 0.06; can.add(tip);
+    for (const y of [0.04, canLen - 0.03]) { const band = mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.014, 28), BK.canEnd); band.scale.z = 0.8; band.position.y = y; can.add(band); }
+    aim(can, [-0.24, 0.16, 0.16], [-0.78, 0.26, 0.16]);
+    add(tube([-0.24, 0.156, 0.16], [-0.3, 0.168, 0.16], 0.026, BK.pipe, 16));
+  }
+
+  // ---------------------------------------------------------------- bodywork
+  // tank under the shrouds
+  add(panel(pathShape(['M', 0.47, 0.44, 'Q', 0.3, 0.42, 0.12, 0.37, 'L', 0.1, 0.22, 'Q', 0.25, 0.17, 0.42, 0.24, 'Z']), 0.2, BK.white, 0.03));
+  // seat: front edge climbs onto the tank, long flat top
+  const seat = panel(pathShape(['M', 0.29, 0.43, 'Q', 0.15, 0.395, 0.0, 0.382, 'L', -0.63, 0.37, 'Q', -0.72, 0.368, -0.745, 0.338, 'L', -0.72, 0.315, 'L', -0.1, 0.322, 'Q', 0.12, 0.33, 0.27, 0.405, 'Z']), 0.17, BK.seat, 0.032);
+  add(seat);
+  // rear fender
+  // rear fender: a wide arched shell under the seat that narrows and kicks up to the tail
+  add(fenderShell([[-0.26, 0.312], [-0.5, 0.328], [-0.74, 0.36], [-0.92, 0.402], [-1.06, 0.452]],
+    (t) => 0.105 - 0.05 * Math.pow(t, 0.85), (t) => 0.034 - 0.012 * t, 0.007, [-0.6, -0.1], BK.white));
+  { const light = mesh(RB(0.05, 0.03, 0.08, 0.008), std('#5a1a14', 0.3, 0.2, { emissive: '#2a0806' })); light.position.set(-0.86, 0.37, 0); light.rotation.z = 0.33; add(light); }
+  // front fender, bolted under the bottom clamp so it does not move with the wheel
+  add(fenderShell([[0.39, 0.286], [0.55, 0.318], [0.7, 0.318], [0.84, 0.288], [0.95, 0.238], [1.005, 0.19]],
+    (t) => 0.044 + 0.02 * Math.sin(Math.PI * Math.min(1, t * 1.15)), (t) => 0.02 + 0.01 * Math.sin(Math.PI * t), 0.006, [0.7, 0.0], BK.white));
+  // radiator shrouds with graphics, flared outwards at the front
+  const shroudShape = pathShape(['M', 0.5, 0.445, 'Q', 0.575, 0.3, 0.56, 0.14, 'Q', 0.54, 0.05, 0.44, 0.045, 'L', 0.25, 0.085, 'Q', 0.12, 0.12, 0.065, 0.25, 'L', 0.085, 0.335, 'Q', 0.25, 0.375, 0.42, 0.44, 'Z']);
+  for (const s of LR) {
+    const m = panel(shroudShape, 0.012, shroudMats[s > 0 ? 1 : 0], 0.004); m.position.z = s * 0.17; m.rotation.y = -s * 0.13; add(m);
+    // louvre grille visible at the front of each shroud
+    const gr = mesh(new THREE.PlaneGeometry(0.1, 0.22), BK.rad); gr.position.set(0.5, 0.25, s * 0.135); gr.rotation.set(0, s > 0 ? 0.9 : Math.PI - 0.9, 0.28); add(gr);
+  }
+  // side number plates
+  const plateShape = pathShape(['M', -0.07, 0.315, 'L', -0.6, 0.35, 'Q', -0.61, 0.2, -0.5, 0.09, 'L', -0.22, 0.065, 'Q', -0.1, 0.09, -0.06, 0.2, 'Z']);
+  for (const s of LR) { const m = panel(plateShape, 0.01, plateMats[s > 0 ? 1 : 0], 0.004); m.position.z = s * 0.142; m.rotation.y = s * 0.03; add(m); }
+  // airbox and frame guards visible between the panels
+  add(panel(pathShape(['M', -0.06, 0.31, 'L', -0.45, 0.33, 'L', -0.4, 0.12, 'L', -0.08, 0.1, 'Z']), 0.2, BK.blackPl, 0.02));
+  // front number plate, tilted with the fork
+  {
+    const sh = pathShape(['M', -0.1, 0.0, 'Q', 0, -0.02, 0.1, 0.0, 'L', 0.125, 0.22, 'Q', 0.12, 0.265, 0.07, 0.27, 'L', -0.07, 0.27, 'Q', -0.12, 0.265, -0.125, 0.22, 'Z']);
+    const m = panel(sh, 0.006, frontPlateMat, 0.004);
+    const n = new THREE.Vector3(Math.cos(RK), Math.sin(RK), 0), v = new THREE.Vector3(-DX, -DY, 0), u = new THREE.Vector3().crossVectors(v, n);
+    m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(u, v, n));
+    const base = [CLAMP_LO[0] + DX * 0.08, CLAMP_LO[1] + DY * 0.08];
+    m.position.set(base[0] + n.x * 0.075, base[1] + n.y * 0.075, 0);
+    add(m);
+  }
+
+  // ---------------------------------------------------------------- front end
   const forkUp = [-DX, -DY];
-  both((s) => add(span(rod(0.032, M.black, 16), [TOP[0], TOP[1], s * 0.1], [OUTER_END[0], OUTER_END[1], s * 0.1])));
-  const inner = both(() => add(rod(0.024, M.gold, 16)));
-  const lug = both(() => add(rod(0.033, M.black, 12)));
-  const caliper = add(box(0.06, 0.1, 0.03, M.black));
-  const forkSprings = both(() => { const m = add(new THREE.Mesh(helixGeo(14, 0.017, 0.0035, 0.6), M.gold)); m.visible = false; return m; });
-  for (const p of [TOP, CLAMP_LO]) { const c = add(box(0.1, 0.045, 0.3, M.frame)); c.position.set(p[0] - 0.01, p[1], 0); c.rotation.z = RK; }
-  // bars
-  add(span(rod(0.014, M.frame), [BARS[0], BARS[1], -0.4], [BARS[0], BARS[1], 0.4]));
-  both((s) => add(span(rod(0.019, M.black), [BARS[0], BARS[1], s * 0.3], [BARS[0], BARS[1], s * 0.41])));
-  both((s) => add(span(rod(0.012, M.black), [TOP[0] - 0.01, TOP[1], s * 0.04], [BARS[0], BARS[1] - 0.01, s * 0.04])));
-  both((s) => add(span(rod(0.006, M.chrome), [BARS[0], BARS[1] + 0.01, s * 0.26], [BARS[0] + 0.1, BARS[1] - 0.03, s * 0.36])));
+  const forkQ = new THREE.Quaternion().setFromUnitVectors(UP, new THREE.Vector3(forkUp[0], forkUp[1], 0));
+  for (const s of LR) {
+    // gold anodised outer tubes clamped in the triples
+    const outerTop = [TOP[0] + forkUp[0] * 0.03, TOP[1] + forkUp[1] * 0.03, s * 0.1];
+    const outerBot = [OUTER_END[0], OUTER_END[1], s * 0.1];
+    const o = tube(outerBot, outerTop, 0.031, BK.forkOuter, 24); add(o);
+    pickable(o, 'station', { key: 'fork' });
+    const seal = tube([outerBot[0] - forkUp[0] * 0.012, outerBot[1] - forkUp[1] * 0.012, s * 0.1], [outerBot[0] + forkUp[0] * 0.02, outerBot[1] + forkUp[1] * 0.02, s * 0.1], 0.034, BK.anoBlack, 24); add(seal);
+    const capTop = tube(outerTop, [outerTop[0] + forkUp[0] * 0.018, outerTop[1] + forkUp[1] * 0.018, s * 0.1], 0.026, BK.anoBlack, 6); add(capTop);
+  }
+  // triple clamps
+  for (const [p, h] of [[TOP, 0.04], [CLAMP_LO, 0.05]]) {
+    const c = mesh(RB(0.11, h, 0.3, 0.018), BK.alu); c.position.set(p[0] - 0.005, p[1], 0); c.rotation.z = RK; add(c);
+  }
+  // bars: tapered aluminium with a bend, pad, grips, levers
+  const barY = BARS[1], barX = BARS[0];
+  add(bent([[-0.035, 0.015, -0.4], [-0.01, 0.025, -0.3], [0.018, -0.02, -0.17], [0.022, -0.045, -0.06], [0.022, -0.045, 0.06], [0.018, -0.02, 0.17], [-0.01, 0.025, 0.3], [-0.035, 0.015, 0.4]].map(([x, y, z]) => [barX + x, barY + y, z]), 0.0125, BK.aluDark, 64, 12));
+  { const pad = mesh(RB(0.06, 0.05, 0.2, 0.02), BK.blackPl); pad.position.set(barX + 0.022, barY - 0.035, 0); add(pad); }
+  for (const s of LR) {
+    add(tube([barX + 0.02, barY - 0.06, s * 0.06], [TOP[0] + forkUp[0] * 0.01, TOP[1] + 0.012, s * 0.06], 0.014, BK.alu, 12));
+    add(tube([barX - 0.01, barY + 0.023, s * 0.3], [barX - 0.035, barY + 0.015, s * 0.415], 0.018, BK.rubber, 16));
+    add(tube([barX - 0.035, barY + 0.015, s * 0.415], [barX - 0.037, barY + 0.015, s * 0.425], 0.02, BK.anoBlack, 16));
+    const perch = mesh(RB(0.04, 0.03, 0.03, 0.006), BK.anoBlack); perch.position.set(barX - 0.005, barY + 0.025, s * 0.25); add(perch);
+    add(bent([[barX + 0.015, barY + 0.025, s * 0.255], [barX + 0.07, barY + 0.01, s * 0.3], [barX + 0.075, barY - 0.005, s * 0.38]], 0.006, BK.alu, 16, 8));
+  }
+  { const res = mesh(RB(0.04, 0.035, 0.04, 0.008), BK.anoBlack); res.position.set(barX + 0.005, barY + 0.05, 0.23); add(res); }
 
-  // wheels
-  function makeWheel(R, rimR, discR, discZ) {
+  // sliding parts of the fork: inner tubes, axle lugs, guards (move with the front axle)
+  const sliders = LR.map((s) => {
+    const sl = new THREE.Group(); sl.quaternion.copy(forkQ); add(sl);
+    const inner = mesh(new THREE.CylinderGeometry(0.0245, 0.0245, 0.44, 24), BK.inner); inner.position.y = 0.26; sl.add(inner);
+    const lug = mesh(RB(0.07, 0.12, 0.052, 0.014), BK.alu); lug.position.set(0.0, 0.035, 0); sl.add(lug);
+    const guard = mesh(new THREE.CylinderGeometry(0.036, 0.034, 0.24, 20, 1, true, 0, Math.PI), BK.white); guard.material.side = THREE.DoubleSide; guard.position.y = 0.2; sl.add(guard);
+    if (s < 0) { const cal = mesh(RB(0.05, 0.08, 0.032, 0.01), BK.anoBlack); cal.position.set(-0.075, 0.11, 0.03); sl.add(cal); }
+    return { sl, z: s * 0.1 };
+  });
+  const forkSprings = LR.map(() => { const m = add(new THREE.Mesh(helixGeo(18, 0.016, 0.0032, 0.6), BK.gold)); m.visible = false; return m; });
+
+  // ---------------------------------------------------------------- wheels
+  function makeWheel(R, rimR, tireW, discR, discSide, sprocket) {
     const w = new THREE.Group();
-    const tire = new THREE.Mesh(new THREE.TorusGeometry(R - 0.052, 0.052, 14, 56), M.rubber); tire.scale.z = 1.15; tire.castShadow = true; w.add(tire);
-    const n = 46, knobs = new THREE.InstancedMesh(new THREE.BoxGeometry(0.03, 0.026, 0.034), M.rubber, n * 3);
+    const h = tireW / 2, base = R - 0.012;
+    const tire = lathe([[rimR + 0.004, -h * 0.62], [rimR + 0.03, -h * 0.98], [base - 0.03, -h], [base - 0.008, -h * 0.85], [base, -h * 0.45], [base + 0.002, 0], [base, h * 0.45], [base - 0.008, h * 0.85], [base - 0.03, h], [rimR + 0.03, h * 0.98], [rimR + 0.004, h * 0.62]], BK.rubber, 72);
+    tire.rotation.x = Math.PI / 2; w.add(tire);
+    // knobs: a centre row and staggered shoulder rows
+    const kg = RB(0.026, 0.018, 0.022, 0.004, 1);
+    const N = 36, rows = [[0, 0], [0.5, h * 0.55], [0.5, -h * 0.55], [0, h * 0.95], [0, -h * 0.95]];
+    const knobs = new THREE.InstancedMesh(kg, BK.rubber, N * rows.length); knobs.castShadow = true;
     const o = new THREE.Object3D(); let k = 0;
-    for (let i = 0; i < n; i++) for (const z of [-0.042, 0, 0.042]) {
-      const a = (i + (z === 0 ? 0.5 : 0)) / n * TAU, rr = R - 0.006 - Math.abs(z) * 0.25;
-      o.position.set(Math.cos(a) * rr, Math.sin(a) * rr, z); o.rotation.set(0, 0, a); o.updateMatrix(); knobs.setMatrixAt(k++, o.matrix);
+    for (let i = 0; i < N; i++) for (const [ph, z] of rows) {
+      const a = ((i + ph) / N) * TAU, edge = Math.abs(z) > h * 0.8;
+      const rr = edge ? base - 0.012 : base + 0.004;
+      o.position.set(Math.cos(a) * rr, Math.sin(a) * rr, z);
+      o.rotation.set(edge ? Math.sign(z) * 0.6 : 0, 0, a);
+      o.scale.set(1, 1, edge ? 0.8 : 1); o.updateMatrix(); knobs.setMatrixAt(k++, o.matrix);
     }
-    knobs.castShadow = true; w.add(knobs);
-    w.add(new THREE.Mesh(new THREE.TorusGeometry(rimR, 0.014, 8, 56), M.rim));
-    const sp = [];
-    for (let i = 0; i < 32; i++) {
-      const a = i / 32 * TAU, zh = i % 2 ? 0.04 : -0.04, a2 = a + (i % 4 < 2 ? 0.2 : -0.2);
-      sp.push(Math.cos(a) * 0.045, Math.sin(a) * 0.045, zh, Math.cos(a2) * (rimR - 0.01), Math.sin(a2) * (rimR - 0.01), zh * 0.2);
+    w.add(knobs);
+    // rim, hub, spokes
+    const rim = lathe([[rimR - 0.016, -0.019], [rimR + 0.004, -0.021], [rimR + 0.006, -0.016], [rimR - 0.004, -0.012], [rimR - 0.004, 0.012], [rimR + 0.006, 0.016], [rimR + 0.004, 0.021], [rimR - 0.016, 0.019], [rimR - 0.02, 0]], BK.anoBlack, 72);
+    rim.rotation.x = Math.PI / 2; w.add(rim);
+    const hub = lathe([[0.012, -0.075], [0.03, -0.075], [0.032, -0.05], [0.052, -0.044], [0.052, -0.036], [0.03, -0.03], [0.026, 0], [0.03, 0.03], [0.052, 0.036], [0.052, 0.044], [0.032, 0.05], [0.03, 0.075], [0.012, 0.075]], BK.alu, 32);
+    hub.rotation.x = Math.PI / 2; w.add(hub);
+    const spokes = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.0019, 0.0019, 1, 5), BK.chrome, 36);
+    for (let i = 0; i < 36; i++) {
+      const side = i % 2 ? 1 : -1, a = (i / 36) * TAU, a2 = a + (i % 4 < 2 ? 0.42 : -0.42);
+      const p0 = new THREE.Vector3(Math.cos(a) * 0.046, Math.sin(a) * 0.046, side * 0.04), p1 = new THREE.Vector3(Math.cos(a2) * (rimR - 0.016), Math.sin(a2) * (rimR - 0.016), side * 0.008);
+      const d = p1.clone().sub(p0), L = d.length();
+      o.position.copy(p0).add(p1).multiplyScalar(0.5); o.quaternion.setFromUnitVectors(UP, d.normalize()); o.scale.set(1, L, 1); o.rotation.setFromQuaternion(o.quaternion); o.updateMatrix(); spokes.setMatrixAt(i, o.matrix);
     }
-    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
-    w.add(new THREE.LineSegments(sg, new THREE.LineBasicMaterial({ color: '#9aa0a6' })));
-    w.add(span(rod(0.045, M.rim, 16), [0, 0, -0.075], [0, 0, 0.075]));
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(discR, discR, 0.005, 36), M.disc); disc.rotation.x = Math.PI / 2; disc.position.z = discZ; w.add(disc);
+    w.add(spokes);
+    // wave brake disc
+    const ds = new THREE.Shape();
+    for (let i = 0; i <= 120; i++) { const a = (i / 120) * TAU, r = discR - 0.006 + 0.006 * Math.cos(a * 12); if (!i) ds.moveTo(Math.cos(a) * r, Math.sin(a) * r); else ds.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    { const hole = new THREE.Path(); hole.absarc(0, 0, discR * 0.62, 0, TAU, true); ds.holes.push(hole); }
+    for (let i = 0; i < 18; i++) { const a = (i / 18) * TAU, r = discR * 0.82, hl = new THREE.Path(); hl.absarc(Math.cos(a) * r, Math.sin(a) * r, 0.0045, 0, TAU, true); ds.holes.push(hl); }
+    const disc = mesh(new THREE.ExtrudeGeometry(ds, { depth: 0.004, bevelEnabled: false, curveSegments: 6 }), BK.disc); disc.position.z = discSide * 0.068; w.add(disc);
+    const carrier = mesh(new THREE.CylinderGeometry(discR * 0.64, discR * 0.64, 0.006, 32), BK.anoBlack); carrier.rotation.x = Math.PI / 2; carrier.position.z = discSide * 0.064; w.add(carrier);
+    if (sprocket) {
+      const sp = new THREE.Shape();
+      const T = 48;
+      for (let i = 0; i <= T * 4; i++) { const a = (i / (T * 4)) * TAU, r = i % 4 === 1 || i % 4 === 2 ? 0.108 : 0.1; if (!i) sp.moveTo(Math.cos(a) * r, Math.sin(a) * r); else sp.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * TAU + 0.3, hl = new THREE.Path(); hl.absellipse(Math.cos(a) * 0.068, Math.sin(a) * 0.068, 0.018, 0.012, 0, TAU, true, a); sp.holes.push(hl); }
+      { const hole = new THREE.Path(); hole.absarc(0, 0, 0.035, 0, TAU, true); sp.holes.push(hole); }
+      const spr = mesh(new THREE.ExtrudeGeometry(sp, { depth: 0.006, bevelEnabled: false, curveSegments: 6 }), BK.sprocket); spr.position.z = -0.082; w.add(spr);
+    }
     return w;
   }
-  const wf = add(makeWheel(GEO.Rf, 0.268, 0.13, 0.08));
-  const wr = add(makeWheel(GEO.Rr, 0.245, 0.11, 0.075));
-  const sprocket = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.008, 30), std('#7a6c5c', 0.4, 0.8)); sprocket.rotation.x = Math.PI / 2; sprocket.position.z = -0.1; wr.add(sprocket);
+  const wf = add(makeWheel(GEO.Rf, 0.268, 0.09, 0.13, -1, false));
+  const wr = add(makeWheel(GEO.Rr, 0.243, 0.11, 0.12, 1, true));
 
-  // swingarm + chain
-  const arms = both(() => add(box(1, 0.06, 0.034, M.frame)));
-  const chain = [add(rod(0.007, M.black, 6)), add(rod(0.007, M.black, 6))];
-  add(span(rod(0.022, M.black), [GEO.pivotX, GEO.pivotY, -0.13], [GEO.pivotX, GEO.pivotY, 0.13]));
+  // ---------------------------------------------------------------- swingarm (pivots about its bolt)
+  const arm = new THREE.Group(); add(arm); arm.position.set(GEO.pivotX, GEO.pivotY, 0);
+  {
+    const A = GEO.arm;
+    // local +x runs to the rear axle; local -y is "up" once rotated back
+    const prof = pathShape(['M', -0.03, -0.045, 'Q', 0.15, -0.05, A + 0.03, -0.024, 'Q', A + 0.06, 0, A + 0.03, 0.024, 'Q', 0.15, 0.055, -0.03, 0.05, 'Q', -0.06, 0, -0.03, -0.045]);
+    for (const s of LR) { const m = panel(prof, 0.024, BK.alu, 0.008); m.position.z = s * 0.105; arm.add(m); }
+    const cross = mesh(RB(0.06, 0.07, 0.2, 0.012), BK.alu); cross.position.set(0.06, 0, 0); arm.add(cross);
+    // chain slider, chain guide, axle blocks, rear caliper
+    const slider = mesh(RB(0.24, 0.022, 0.034, 0.008), BK.blackPl); slider.position.set(0.14, -0.05, -0.1); arm.add(slider);
+    const guide = mesh(RB(0.14, 0.05, 0.026, 0.01), BK.blackPl); guide.position.set(A - 0.16, 0.075, -0.082); arm.add(guide);
+    for (const s of LR) { const b = mesh(RB(0.05, 0.03, 0.032, 0.006), BK.anoBlack); b.position.set(A + 0.012, 0, s * 0.108); arm.add(b); }
+    const cal = mesh(RB(0.07, 0.04, 0.03, 0.01), BK.anoBlack); cal.position.set(A - 0.07, 0.07, 0.074); arm.add(cal);
+  }
+  const chain = [add(mesh(RB(1, 0.012, 0.014, 0.004), BK.chain)), add(mesh(RB(1, 0.012, 0.014, 0.004), BK.chain))];
+  { const cs = mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 16), BK.sprocket); cs.rotation.x = Math.PI / 2; cs.position.set(0.04, -0.17, -0.079); add(cs); }
 
-  // shock: body + reservoir fixed to the frame; shaft, spring and lower collar ride with the linkage
-  const bodyEnd = [SHOCK_TOP[0] + SD[0] * 0.2, SHOCK_TOP[1] + SD[1] * 0.2];
-  add(span(rod(0.03, M.black, 16), [SHOCK_TOP[0], SHOCK_TOP[1], 0], [bodyEnd[0], bodyEnd[1], 0]));
-  add(span(rod(0.024, M.gold, 16), [SHOCK_TOP[0] - 0.05, SHOCK_TOP[1] - 0.01, 0.055], [SHOCK_TOP[0] - 0.06, SHOCK_TOP[1] - 0.17, 0.055]));
+  // ---------------------------------------------------------------- shock: body + reservoir on the frame, shaft + spring ride with the linkage
+  const bodyEnd = [SHOCK_TOP[0] + SD[0] * 0.21, SHOCK_TOP[1] + SD[1] * 0.21];
+  pickable(add(tube([SHOCK_TOP[0], SHOCK_TOP[1], 0], [bodyEnd[0], bodyEnd[1], 0], 0.026, BK.shockBody, 24)), 'station', { key: 'shock' });
+  { const eye = mesh(RB(0.05, 0.05, 0.05, 0.012), BK.anoBlack); eye.position.set(SHOCK_TOP[0] - SD[0] * 0.01, SHOCK_TOP[1] - SD[1] * 0.01, 0); add(eye); }
+  const nrm = [-SD[1], SD[0]];
+  const resA = [SHOCK_TOP[0] + nrm[0] * -0.05 + SD[0] * 0.02, SHOCK_TOP[1] + nrm[1] * -0.05 + SD[1] * 0.02, 0.05];
+  const resB = [resA[0] + SD[0] * 0.15, resA[1] + SD[1] * 0.15, 0.05];
+  add(tube(resA, resB, 0.022, BK.shockBody, 20));
+  add(tube([resA[0] - SD[0] * 0.012, resA[1] - SD[1] * 0.012, 0.05], resA, 0.024, BK.shockBlue, 20));
+  add(tube([SHOCK_TOP[0] + SD[0] * 0.02, SHOCK_TOP[1] + SD[1] * 0.02, 0.02], [resA[0], resA[1], 0.04], 0.012, BK.shockBody, 10));
   const collarTop = [SHOCK_TOP[0] + SD[0] * 0.05, SHOCK_TOP[1] + SD[1] * 0.05];
-  add(span(rod(0.047, M.black, 20), [collarTop[0] - SD[0] * 0.006, collarTop[1] - SD[1] * 0.006, 0], [collarTop[0] + SD[0] * 0.006, collarTop[1] + SD[1] * 0.006, 0]));
-  const shaft = add(rod(0.009, M.chrome, 10));
-  const collarBot = add(rod(0.047, std('#4a4d52', 0.4, 0.6), 20));
+  add(tube([collarTop[0] - SD[0] * 0.008, collarTop[1] - SD[1] * 0.008, 0], [collarTop[0] + SD[0] * 0.01, collarTop[1] + SD[1] * 0.01, 0], 0.047, BK.shockBlue, 28));
+  const shaft = add(rod(0.0085, BK.chrome, 12));
+  const collarBot = add(rod(0.046, BK.anoBlack, 24));
+  const clevis = add(mesh(RB(0.045, 0.05, 0.05, 0.01), BK.anoBlack));
   const SPRING_BASE = 0.33;
   const spring = add(new THREE.Mesh(helixGeo(8, 0.038, wireFor(5.4), SPRING_BASE), M.spring)); spring.castShadow = true;
-  const links = both(() => add(box(1, 0.035, 0.016, M.dark)));
-  const dogbone = add(rod(0.012, M.dark, 8));
+  pickable(spring, 'station', { key: 'shock' });
+  const links = LR.map(() => add(mesh(RB(1, 0.035, 0.016, 0.006), BK.aluDark)));
+  const dogbone = add(rod(0.012, BK.aluDark, 10));
 
   // rider
   const rider = buildRider();
   g.add(rider.group);
 
   let springRate = 0;
+  const anchors = { fork: new THREE.Vector3(), shock: new THREE.Vector3() };
   return {
     group: g,
     rider,
+    anchors,
     forkSpringsVisible(on) { forkSprings.forEach((m) => { m.visible = on; }); },
     setSpring(rate) {
       if (Math.abs(rate - springRate) < 1e-6) return;
@@ -1524,42 +2030,41 @@ const bike = (() => {
       const ra = [GEO.pivotX - Math.sqrt(GEO.arm * GEO.arm - dyp * dyp), ry];
       wf.position.set(fa[0], fa[1], 0); wf.rotation.z = -sim.spin / GEO.Rf;
       wr.position.set(ra[0], ra[1], 0); wr.rotation.z = -sim.spin / GEO.Rr;
-      // fork
       for (let i = 0; i < 2; i++) {
-        const z = (i ? 1 : -1) * 0.1;
-        span(inner[i], [fa[0], fa[1], z], [fa[0] + forkUp[0] * 0.42, fa[1] + forkUp[1] * 0.42, z], 1, 1);
-        span(lug[i], [fa[0] - forkUp[0] * 0.02, fa[1] - forkUp[1] * 0.02, z], [fa[0] + forkUp[0] * 0.1, fa[1] + forkUp[1] * 0.1, z], 1, 1);
+        const { sl, z } = sliders[i];
+        sl.position.set(fa[0], fa[1], z);
         if (forkSprings[i].visible) span(forkSprings[i], [TOP[0] + DX * 0.06, TOP[1] + DY * 0.06, z], [fa[0] + forkUp[0] * 0.12, fa[1] + forkUp[1] * 0.12, z], 1, 0.6);
       }
-      caliper.position.set(fa[0] - 0.06, fa[1] + 0.07, 0.09);
       // swingarm
       const ang = Math.atan2(ra[1] - GEO.pivotY, ra[0] - GEO.pivotX);
-      const len = Math.hypot(ra[0] - GEO.pivotX, ra[1] - GEO.pivotY) + 0.06;
-      for (let i = 0; i < 2; i++) {
-        const a = arms[i];
-        a.position.set((GEO.pivotX + ra[0]) / 2 - Math.cos(ang) * 0.0, (GEO.pivotY + ra[1]) / 2, (i ? 1 : -1) * 0.085);
-        a.rotation.set(0, 0, ang); a.scale.set(len, 1, 1);
-      }
+      arm.rotation.z = ang;
       const cs = [0.04, -0.17];
-      span(chain[0], [cs[0], cs[1] + 0.045, -0.105], [ra[0], ra[1] + 0.105, -0.105], 1, 1);
-      span(chain[1], [cs[0], cs[1] - 0.045, -0.105], [ra[0], ra[1] - 0.105, -0.105], 1, 1);
+      const top0 = [cs[0], cs[1] + 0.046], top1 = [ra[0], ra[1] + 0.106], bot0 = [cs[0], cs[1] - 0.046], bot1 = [ra[0], ra[1] - 0.106];
+      for (const [m, a, b] of [[chain[0], top0, top1], [chain[1], bot0, bot1]]) {
+        m.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, -0.079);
+        m.rotation.set(0, 0, Math.atan2(b[1] - a[1], b[0] - a[0])); m.scale.set(Math.hypot(b[0] - a[0], b[1] - a[1]), 1, 1);
+      }
       // shock
       const stroke = clamp(P.shockStroke(clamp(sr, 0, GEO.travelR)), 0, SHOCK_FULL);
       const L = SHOCK_LEN - stroke;
       const sb = [SHOCK_TOP[0] + SD[0] * L, SHOCK_TOP[1] + SD[1] * L];
       span(shaft, [bodyEnd[0], bodyEnd[1], 0], [sb[0], sb[1], 0], 1, 1);
-      const cb = [sb[0] - SD[0] * 0.035, sb[1] - SD[1] * 0.035];
-      span(collarBot, [cb[0] - SD[0] * 0.006, cb[1] - SD[1] * 0.006, 0], [cb[0] + SD[0] * 0.006, cb[1] + SD[1] * 0.006, 0], 1, 1);
-      span(spring, [collarTop[0], collarTop[1], 0], [cb[0], cb[1], 0], 1, SPRING_BASE);
+      clevis.position.set(sb[0], sb[1], 0); clevis.rotation.z = Math.atan2(SD[1], SD[0]);
+      const cb = [sb[0] - SD[0] * 0.04, sb[1] - SD[1] * 0.04];
+      span(collarBot, [cb[0] - SD[0] * 0.007, cb[1] - SD[1] * 0.007, 0], [cb[0] + SD[0] * 0.007, cb[1] + SD[1] * 0.007, 0], 1, 1);
+      span(spring, [collarTop[0] + SD[0] * 0.01, collarTop[1] + SD[1] * 0.01, 0], [cb[0], cb[1], 0], 1, SPRING_BASE);
       const nx = -Math.sin(ang), ny = Math.cos(ang);
       const armPt = [GEO.pivotX + Math.cos(ang) * 0.17 + nx * -0.06, GEO.pivotY + Math.sin(ang) * 0.17 + ny * -0.06];
       for (let i = 0; i < 2; i++) {
-        const l = links[i], z = (i ? 1 : -1) * 0.028;
+        const l = links[i], z = (i ? 1 : -1) * 0.03;
         l.position.set((sb[0] + armPt[0]) / 2, (sb[1] + armPt[1]) / 2, z);
         l.rotation.set(0, 0, Math.atan2(armPt[1] - sb[1], armPt[0] - sb[0]));
         l.scale.set(Math.hypot(armPt[0] - sb[0], armPt[1] - sb[1]) + 0.03, 1, 1);
       }
       span(dogbone, [sb[0], sb[1], 0], [0.0, -0.31, 0], 1, 1);
+      // hotspot anchors (chassis frame)
+      anchors.fork.set(OUTER_END[0] + forkUp[0] * 0.08, OUTER_END[1] + forkUp[1] * 0.08, 0.1);
+      anchors.shock.set((SHOCK_TOP[0] + sb[0]) / 2, (SHOCK_TOP[1] + sb[1]) / 2 + 0.02, 0.05);
       // rider
       rider.group.visible = sim.riderOn !== false;
       if (rider.group.visible) rider.pose(ridingPose(sim), Math.pow((sim.set.rider || 78) / 78, 0.45));
@@ -1569,83 +2074,165 @@ const bike = (() => {
 })();
 
 // ============================================================================ riders
+function ik3(a, c, l1, l2, pole) {
+  const d = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+  let L = Math.hypot(d[0], d[1], d[2]) || 1e-6;
+  const dn = d.map((v) => v / L);
+  L = Math.min(L, l1 + l2 - 1e-4);
+  const x = (l1 * l1 - l2 * l2 + L * L) / (2 * L), h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
+  const pd = pole[0] * dn[0] + pole[1] * dn[1] + pole[2] * dn[2];
+  let p = [pole[0] - dn[0] * pd, pole[1] - dn[1] * pd, pole[2] - dn[2] * pd];
+  const pl = Math.hypot(p[0], p[1], p[2]) || 1; p = p.map((v) => v / pl);
+  return [a[0] + dn[0] * x + p[0] * h, a[1] + dn[1] * x + p[1] * h, a[2] + dn[2] * x + p[2] * h];
+}
+
 function buildRider() {
   const g = new THREE.Group();
-  const limb = (mat) => { const m = rod(1, mat, 12); g.add(m); return m; };
-  const joint = (mat) => { const m = ball(1, mat, 14); g.add(m); return m; };
-  const R = {
-    thigh: [limb(M.pants), limb(M.pants)], shin: [limb(M.pants), limb(M.pants)],
-    knee: [joint(M.kneeGuard), joint(M.kneeGuard)],
-    boot: [limb(M.boot), limb(M.boot)], foot: [box(1, 1, 1, M.boot), box(1, 1, 1, M.boot)],
-    uarm: [limb(M.jersey), limb(M.jersey)], farm: [limb(M.jersey), limb(M.jersey)],
-    elbow: [joint(M.jersey), joint(M.jersey)], hand: [joint(M.glove), joint(M.glove)], shoulder: [joint(M.jersey), joint(M.jersey)],
-    hip: joint(M.pants), neck: limb(M.dark),
+  const seg = (profile, mat, n = 20) => { const m = lathe(profile, mat, n); g.add(m); return m; };
+  const blob = (mat, n = 20) => { const m = mesh(new THREE.SphereGeometry(1, n, Math.round(n * 0.7)), mat); g.add(m); return m; };
+  // limb profiles: [radius, t] with t = 0 at the proximal joint and 1 at the distal one
+  const THIGH = [[0, -0.04], [0.07, 0], [0.088, 0.2], [0.086, 0.55], [0.074, 0.88], [0.06, 1.0], [0, 1.03]];
+  const SHIN = [[0, -0.03], [0.062, 0], [0.06, 0.25], [0.052, 0.5], [0, 0.52]];
+  const BOOT = [[0, 0], [0.066, 0.0], [0.07, 0.15], [0.067, 0.5], [0.072, 0.92], [0.07, 1.0], [0.06, 1.0], [0, 0.99]];
+  const UARM = [[0, -0.05], [0.066, 0], [0.064, 0.4], [0.054, 0.9], [0, 1.02]];
+  const FARM = [[0, -0.04], [0.052, 0], [0.05, 0.35], [0.041, 0.8], [0.046, 0.86], [0.047, 1.0], [0, 1.01]];
+  const TORSO = [[0, -0.06], [0.12, -0.03], [0.15, 0.1], [0.158, 0.4], [0.18, 0.7], [0.18, 0.84], [0.14, 0.95], [0.07, 1.0], [0, 1.01]];
+  const L = {
+    thigh: [seg(THIGH, RD.pants), seg(THIGH, RD.pants)],
+    shin: [seg(SHIN, RD.pants), seg(SHIN, RD.pants)],
+    boot: [seg(BOOT, RD.boot), seg(BOOT, RD.boot)],
+    uarm: [seg(UARM, RD.jersey), seg(UARM, RD.jersey)],
+    farm: [seg(FARM, RD.jersey), seg(FARM, RD.jersey)],
   };
-  R.foot.forEach((f) => g.add(f));
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(1, 1, 6, 14), M.jersey); torso.castShadow = true; g.add(torso);
-  const stripe = new THREE.Mesh(new THREE.CapsuleGeometry(1, 1, 4, 14), std('#e3ad4b', 0.7)); stripe.castShadow = false; g.add(stripe);
+  const torso = seg(TORSO, RD.jerseyBody, 28);
+  const pelvis = blob(RD.pants);
+  const shoulders = [blob(RD.jersey), blob(RD.jersey)];
+  // knee braces
+  const braces = [0, 1].map(() => {
+    const b = new THREE.Group(); g.add(b);
+    b.add(mesh(RB(0.11, 0.2, 0.15, 0.04), RD.brace));
+    for (const s of [-1, 1]) { const h = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 16), RD.braceGold); h.rotation.x = Math.PI / 2; h.position.set(-0.005, 0, s * 0.078); b.add(h); }
+    return b;
+  });
+  // boot feet: sole + toe box, plus buckles on the outside of the shaft
+  const feet = [0, 1].map(() => {
+    const f = new THREE.Group(); g.add(f);
+    const sh = pathShape(['M', -0.06, 0, 'L', 0.2, 0, 'Q', 0.25, 0.0, 0.25, 0.04, 'Q', 0.24, 0.085, 0.14, 0.095, 'L', -0.06, 0.12, 'Z']);
+    const upper = panel(sh, 0.085, RD.boot, 0.018); upper.position.y = 0.016; f.add(upper);
+    const sole = mesh(RB(0.31, 0.022, 0.11, 0.008), RD.bootDark); sole.position.set(0.09, 0.011, 0); f.add(sole);
+    const heel = mesh(RB(0.08, 0.04, 0.1, 0.01), RD.bootDark); heel.position.set(-0.04, 0.03, 0); f.add(heel);
+    return f;
+  });
+  const buckles = [0, 1].map(() => [0, 1, 2].map(() => { const b = mesh(RB(0.05, 0.016, 0.012, 0.004), RD.buckle); g.add(b); return b; }));
+  // gloves around the grips
+  const hands = [0, 1].map(() => { const h = new THREE.Group(); g.add(h); h.add(mesh(RB(0.085, 0.07, 0.1, 0.03), RD.glove)); const k = mesh(RB(0.05, 0.03, 0.08, 0.012), RD.gloveGold); k.position.set(0.0, 0.033, 0); h.add(k); return h; });
+  const neck = blob(RD.neck, 16);
+  // helmet
   const helmet = new THREE.Group(); g.add(helmet);
-  helmet.add(ball(0.135, M.plastic, 20));
-  { const chin = box(0.12, 0.09, 0.16, M.shade); chin.position.set(0.11, -0.07, 0); chin.rotation.z = -0.3; helmet.add(chin); }
-  { const peak = box(0.2, 0.02, 0.2, M.plastic); peak.position.set(0.12, 0.09, 0); peak.rotation.z = -0.22; helmet.add(peak); }
-  { const gog = box(0.07, 0.06, 0.2, M.visor); gog.position.set(0.11, 0.0, 0); helmet.add(gog); }
-  { const strap = new THREE.Mesh(new THREE.TorusGeometry(0.137, 0.02, 6, 24), std('#e3ad4b', 0.6)); strap.rotation.y = Math.PI / 2; strap.scale.set(1, 0.95, 1); helmet.add(strap); }
+  {
+    const shell = mesh(new THREE.SphereGeometry(0.142, 36, 26), RD.helmet); shell.scale.set(1.12, 1.0, 0.94); helmet.add(shell);
+    // chin bar: a rounded bar swept around the jaw, jutting forward and down like a motocross lid
+    helmet.add(band([[-0.005, -0.07, -0.104], [0.09, -0.098, -0.1], [0.172, -0.124, -0.056], [0.205, -0.136, 0], [0.172, -0.124, 0.056], [0.09, -0.098, 0.1], [-0.005, -0.07, 0.104]], 0.017, 0.042, RD.shell));
+    for (const sgn of [-1, 1]) { const v = mesh(RB(0.03, 0.022, 0.024, 0.006), RD.helmetDark); v.position.set(0.15, -0.115, sgn * 0.072); v.rotation.y = sgn * 0.9; helmet.add(v); }
+    const vent = mesh(RB(0.026, 0.05, 0.07, 0.01), RD.helmetDark); vent.position.set(0.218, -0.134, 0); vent.rotation.z = -0.35; helmet.add(vent);
+    // peak: a broad visor over the eye port, tipped up
+    const peak = panel(pathShape(['M', 0.0, -0.118, 'Q', 0.1, -0.124, 0.165, -0.084, 'Q', 0.19, 0, 0.165, 0.084, 'Q', 0.1, 0.124, 0.0, 0.118, 'Z']), 0.008, RD.shell, 0.004);
+    peak.rotation.x = Math.PI / 2;
+    const pk = new THREE.Group(); pk.add(peak); pk.position.set(0.085, 0.05, 0); pk.rotation.z = 0.2; helmet.add(pk);
+    { const ps = mesh(RB(0.1, 0.006, 0.03, 0.002), RD.strap); ps.position.set(0.1, 0.006, 0); pk.add(ps); }
+    // goggles: a curved frame across the eye port with a tinted lens
+    const arc = (k, a0, a1, y, n = 9) => Array.from({ length: n }, (_, i) => { const a = a0 + ((a1 - a0) * i) / (n - 1); return [0.159 * k * Math.cos(a), y, 0.1335 * k * Math.sin(a)]; });
+    helmet.add(band(arc(1.06, -0.9, 0.9, 0.0), 0.034, 0.011, RD.goggle));
+    helmet.add(band(arc(1.13, -0.72, 0.72, 0.0), 0.025, 0.004, RD.lens));
+    const strap = mesh(new THREE.TorusGeometry(0.15, 0.018, 8, 40), RD.strap); strap.rotation.x = Math.PI / 2; strap.scale.set(1.06, 0.97, 0.45); strap.position.set(-0.01, 0.0, 0); helmet.add(strap);
+  }
+  // neck brace ring
+  const brace = mesh(new THREE.TorusGeometry(0.115, 0.028, 10, 32), RD.brace); g.add(brace);
+  const Z = new THREE.Vector3(0, 0, 1), bdir = new THREE.Vector3();
+
+  const place = (m, a, b, sx, sz = sx) => { aim(m, a, b); m.scale.set(sx, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), sz); };
   return {
     group: g,
     pose(j, k = 1) {
       for (let i = 0; i < 2; i++) {
-        span(R.thigh[i], j.hip[i], j.knee[i], 0.085 * k);
-        span(R.shin[i], j.knee[i], j.ankle[i], 0.066 * k);
-        R.knee[i].position.set(...j.knee[i]); R.knee[i].scale.setScalar(0.075 * k);
-        span(R.boot[i], j.ankle[i], [lerp(j.ankle[i][0], j.knee[i][0], 0.42), lerp(j.ankle[i][1], j.knee[i][1], 0.42), lerp(j.ankle[i][2], j.knee[i][2], 0.42)], 0.064);
-        const f = R.foot[i]; f.position.set(j.toe[i][0] * 0.5 + j.ankle[i][0] * 0.5, j.toe[i][1] * 0.5 + j.ankle[i][1] * 0.5 - 0.02, j.ankle[i][2]);
-        f.scale.set(0.28, 0.085, 0.1); f.rotation.set(0, 0, Math.atan2(j.toe[i][1] - j.ankle[i][1], j.toe[i][0] - j.ankle[i][0]));
-        span(R.uarm[i], j.shoulder[i], j.elbow[i], 0.056 * k);
-        span(R.farm[i], j.elbow[i], j.hand[i], 0.048 * k);
-        R.elbow[i].position.set(...j.elbow[i]); R.elbow[i].scale.setScalar(0.054 * k);
-        R.shoulder[i].position.set(...j.shoulder[i]); R.shoulder[i].scale.setScalar(0.072 * k);
-        R.hand[i].position.set(...j.hand[i]); R.hand[i].scale.setScalar(0.045);
+        place(L.thigh[i], j.hip[i], j.knee[i], k);
+        const ank = j.ankle[i], kn = j.knee[i];
+        place(L.shin[i], kn, ank, k);
+        // boot shaft covers the lower 60% of the shin
+        const bt = [lerp(ank[0], kn[0], 0.6), lerp(ank[1], kn[1], 0.6), lerp(ank[2], kn[2], 0.6)];
+        place(L.boot[i], ank, bt, 1);
+        L.boot[i].position.set(ank[0], ank[1] - 0.02, ank[2]);
+        const dirx = j.toe[i][0] - ank[0], diry = j.toe[i][1] - ank[1];
+        feet[i].position.set(ank[0] - 0.02, ank[1] - 0.085, ank[2]);
+        feet[i].rotation.set(0, 0, Math.atan2(diry + 0.06, dirx));
+        // buckles: stacked on the outside of the boot shaft
+        const out = i ? 1 : -1;
+        buckles[i].forEach((b, n) => {
+          const t = 0.25 + n * 0.22;
+          b.position.set(lerp(ank[0], bt[0], t) - 0.01, lerp(ank[1], bt[1], t), lerp(ank[2], bt[2], t) + out * 0.068);
+          b.rotation.set(0, 0, Math.atan2(bt[1] - ank[1], bt[0] - ank[0]) + Math.PI / 2 + 0.15);
+        });
+        // knee brace sits on the front of the knee, aligned with the shin
+        const sh = Math.atan2(ank[1] - kn[1], ank[0] - kn[0]);
+        braces[i].position.set(kn[0] + 0.035 * Math.cos(sh + Math.PI / 2), kn[1] + 0.035 * Math.sin(sh + Math.PI / 2), kn[2]);
+        braces[i].rotation.set(0, 0, sh + Math.PI / 2);
+        braces[i].scale.setScalar(Math.max(1, k * 0.98));
+        place(L.uarm[i], j.shoulder[i], j.elbow[i], k);
+        place(L.farm[i], j.elbow[i], j.hand[i], k);
+        shoulders[i].position.set(...j.shoulder[i]); shoulders[i].scale.setScalar(0.078 * k);
+        hands[i].position.set(...j.hand[i]);
+        hands[i].rotation.set(0, 0, j.handTilt ?? 0.4);
       }
-      const pel = j.pelvis, ch = j.chest;
-      R.hip.position.set(...pel); R.hip.scale.set(0.12 * k, 0.11 * k, 0.15 * k);
-      span(torso, pel, ch, 1, 1);
-      const L = Math.hypot(ch[0] - pel[0], ch[1] - pel[1]);
-      torso.scale.set(0.13 * k, (L + 0.06) / 3, 0.17 * k);
-      span(stripe, pel, ch, 1, 1); stripe.scale.set(0.131 * k, (L - 0.02) / 3, 0.04);
-      span(R.neck, ch, j.head, 0.045);
+      pelvis.position.set(j.pelvis[0], j.pelvis[1], j.pelvis[2]); pelvis.scale.set(0.13 * k, 0.11 * k, 0.165 * k);
+      // torso: depth (x) is thinner than width (z)
+      place(torso, j.pelvis, j.neck, 0.78 * k, 1.08 * k);
+      neck.position.set(...j.neck); neck.scale.set(0.055, 0.07, 0.055);
+      brace.position.set(j.neck[0] - 0.01, j.neck[1] - 0.01, j.neck[2]);
+      bdir.set(j.neck[0] - j.pelvis[0], j.neck[1] - j.pelvis[1], 0).normalize();
+      brace.quaternion.setFromUnitVectors(Z, bdir); brace.scale.set(1.2 * k, 1.05 * k, 1);
       helmet.position.set(...j.head); helmet.rotation.set(0, 0, j.headTilt || 0);
     },
   };
 }
 
-// riding pose in the chassis frame, same joints as the one-pager plus a lateral spread
+// riding pose in the chassis frame: standing on the pegs in the attack position
 function ridingPose(sim) {
-  const lc = sim.riderOn ? sim.lc : 0.09;
-  const hip = [-0.2 - lc * 0.3, PEG[1] + 0.58 - lc];
-  const ankle = [PEG[0] - 0.02, PEG[1] + 0.07];
-  const knee = ik(hip[0], hip[1], ankle[0], ankle[1], 0.45, 0.45, 1);
-  const shoulder = [hip[0] + 0.3 + lc * 0.2, hip[1] + 0.36 - lc * 0.15];
-  const head = [shoulder[0] + 0.09, shoulder[1] + 0.17];
-  const elbow = ik(shoulder[0], shoulder[1], BARS[0] - 0.02, BARS[1], 0.3, 0.3, -1);
-  const L = (p, z) => [p[0], p[1], z];
-  return {
-    hip: [L(hip, -0.1), L(hip, 0.1)], knee: [L(knee, -0.19), L(knee, 0.19)], ankle: [L(ankle, -0.2), L(ankle, 0.2)],
-    toe: [[ankle[0] + 0.14, ankle[1] - 0.06, -0.2], [ankle[0] + 0.14, ankle[1] - 0.06, 0.2]],
-    shoulder: [L(shoulder, -0.19), L(shoulder, 0.19)], elbow: [[elbow[0], elbow[1] + 0.02, -0.33], [elbow[0], elbow[1] + 0.02, 0.33]],
-    hand: [[BARS[0] - 0.01, BARS[1] + 0.01, -0.36], [BARS[0] - 0.01, BARS[1] + 0.01, 0.36]],
-    pelvis: L(hip, 0), chest: [shoulder[0] - 0.02, shoulder[1] - 0.03, 0], head: L(head, 0), headTilt: -0.15,
-  };
+  const lc = sim.riderOn ? sim.lc : 0.086;
+  const dip = lc - 0.086;                       // how far the legs are compressed beyond their resting bend
+  const pelvis = [-0.26 - dip * 0.45, PEG[1] + 0.76 - lc, 0];
+  const lean = 0.84 + dip * 0.7;                // torso angle from vertical (radians)
+  const T = 0.49;
+  const neck = [pelvis[0] + Math.sin(lean) * T, pelvis[1] + Math.cos(lean) * T, 0];
+  const head = [neck[0] + 0.1, neck[1] + 0.13, 0];
+  const sh = (s) => [neck[0] - Math.sin(lean) * 0.045, neck[1] - Math.cos(lean) * 0.045, s * 0.19];
+  const hip = (s) => [pelvis[0] + 0.02, pelvis[1] - 0.05, s * 0.11];
+  const ankle = (s) => [PEG[0] - 0.1, PEG[1] + 0.09, s * 0.2];
+  const hand = (s) => [BARS[0] - 0.02, BARS[1] + 0.03, s * 0.355];
+  const S = [-1, 1];
+  const shoulder = S.map(sh), hipJ = S.map(hip), ankleJ = S.map(ankle), handJ = S.map(hand);
+  const knee = S.map((s, i) => ik3(hipJ[i], ankleJ[i], 0.44, 0.45, [1, 0.1, s * 0.55]));
+  const elbow = S.map((s, i) => ik3(shoulder[i], handJ[i], 0.3, 0.31, [-0.45, 0.25, s * 1]));
+  const toe = ankleJ.map((a) => [a[0] + 0.19, a[1] - 0.075, a[2]]);
+  return { pelvis, neck, head, headTilt: -0.12 + dip * 0.5, lean, hip: hipJ, knee, ankle: ankleJ, toe, shoulder, elbow, hand: handJ, handTilt: 0.5 };
 }
-const STAND = {
-  hip: [[0, 0.93, -0.1], [0, 0.93, 0.1]], knee: [[0.04, 0.5, -0.11], [0.04, 0.5, 0.11]], ankle: [[0, 0.1, -0.12], [0, 0.1, 0.12]],
-  toe: [[0.16, 0.05, -0.12], [0.16, 0.05, 0.12]],
-  shoulder: [[0.01, 1.43, -0.2], [0.01, 1.43, 0.2]], elbow: [[0.0, 1.16, -0.26], [0.0, 1.16, 0.26]], hand: [[0.08, 0.93, -0.25], [0.08, 0.93, 0.25]],
-  pelvis: [0, 0.95, 0], chest: [0.01, 1.42, 0], head: [0.03, 1.66, 0], headTilt: 0,
-};
+const STAND = (() => {
+  const S = [-1, 1];
+  const pelvis = [0, 0.97, 0], neck = [0.0, 1.47, 0], head = [0.03, 1.62, 0];
+  const shoulder = S.map((s) => [0, 1.43, s * 0.19]), hip = S.map((s) => [0, 0.92, s * 0.095]);
+  const ankle = S.map((s) => [-0.02, 0.1, s * 0.12]), toe = ankle.map((a) => [a[0] + 0.2, a[1] - 0.08, a[2]]);
+  const hand = S.map((s) => [0.04, 0.9, s * 0.27]);
+  const knee = S.map((s, i) => ik3(hip[i], ankle[i], 0.44, 0.45, [1, 0, 0]));
+  const elbow = S.map((s, i) => ik3(shoulder[i], hand[i], 0.3, 0.31, [-1, 0, s * 0.3]));
+  return { pelvis, neck, head, headTilt: 0, lean: 0, hip, knee, ankle, toe, shoulder, elbow, hand, handTilt: -1.2 };
+})();
 const standing = buildRider();
 standing.group.position.set(-3.1, FLOOR_Y + 0.09, -2.3);
 standing.group.rotation.y = 0.3 - Math.PI / 2;
 scene.add(standing.group);
+
+XRAY_SOFT.push(BK.frame, BK.subframe, BK.case, BK.head, BK.cover);
+XRAY_MATS.push(BK.white, BK.blackPl, BK.seat, BK.forkOuter, BK.can, BK.canEnd, BK.pipe, BK.rad, ...shroudMats, ...plateMats, frontPlateMat,
+  ...Object.values(RD));
 
 // ============================================================================ dust
 const dust = (() => {
@@ -1701,18 +2288,18 @@ const REF_JOLT = { trail: 3.1, chop: 3.9, whoops: 3.2, jump: 6.3, bumps: 4.2, fl
 const MISSIONS = [
   { id: 'trail', name: 'Free ride', track: 'trail', set: { speed: 40 },
     problem: 'Stock bike, 78 kg rider, a mixed lane of rollers, whoops, rocks and a small jump. Nothing is broken yet.',
-    goal: 'Explore. Swap a spring, spin a clicker, change the rider, then watch the gauges.', check: null },
-  { id: 'landing', name: 'Flat landing', track: 'jump', set: { speed: 35, comp: 17 },
-    problem: 'Coming up short onto the flat is like stepping off a 1.3 m wall. Compression is nearly wide open, so the rear slams into the end of its stroke.',
+    goal: 'Explore. Click the fork or the shock on the bike, swap a spring on the rack, then watch the gauges.', check: null },
+  { id: 'landing', name: 'Flat landing', track: 'jump', set: { speed: 35, rComp: 17, rHsc: 17 },
+    problem: 'Coming up short onto the flat is like stepping off a 1.3 m wall. The shock’s compression is almost wide open, so the rear slams into the end of its stroke.',
     goal: 'Land without bottoming out.', check: (s) => s.bottoms === 0 },
-  { id: 'whoops', name: 'Whoops', track: 'whoops', set: { speed: 45, reb: 2 },
-    problem: 'Fourteen rollers at 45 km/h. Rebound is so slow the rear can’t extend before the next whoop, so it sinks lower on every one. Riders call it packing.',
+  { id: 'whoops', name: 'Whoops', track: 'whoops', set: { speed: 45, rReb: 2 },
+    problem: 'Fourteen rollers at 45 km/h. The shock’s rebound is so slow the rear can’t extend before the next whoop, so it sinks lower on every one. Riders call it packing.',
     goal: 'Keep the rear’s average depth in the whoops under 50%.', check: (s) => s.packR != null && s.packR < 0.5 },
-  { id: 'rocks', name: 'Rock garden', track: 'chop', set: { speed: 32, comp: 1 },
-    problem: 'Sharp rocks at 32 km/h with compression almost closed. Each rock shoves the whole bike instead of just the wheel, and your hands take every hit.',
+  { id: 'rocks', name: 'Rock garden', track: 'chop', set: { speed: 32, fComp: 1, rComp: 1, rHsc: 1 },
+    problem: 'Sharp rocks at 32 km/h with compression almost closed on the fork and the shock. Each rock shoves the whole bike instead of just the wheel, and your hands take every hit.',
     goal: 'Bring the hardest jolt under 4.5 g.', check: (s) => s.jolt < 4.5 },
-  { id: 'pogo', name: 'Pogo', track: 'jump', set: { speed: 35, reb: 19 },
-    problem: 'The same flat landing with rebound wide open. The spring fires the bike straight back up and the rear bucks.',
+  { id: 'pogo', name: 'Pogo', track: 'jump', set: { speed: 35, rReb: 19 },
+    problem: 'The same flat landing with the shock’s rebound wide open. The spring fires the bike straight back up and the rear bucks.',
     goal: 'Land and settle without the rear kicking.', check: (s) => s.hits > 0 && s.kicks === 0 },
   { id: 'heavy', name: 'Heavy rider', track: 'jump', set: { speed: 35, rider: 108 },
     problem: 'A 108 kg rider on springs chosen for 78 kg. The bike squats and bottoms. Winding in preload looks like a fix, but watch the static sag.',
@@ -1767,35 +2354,45 @@ function finishLap() {
 function coachItems() {
   const set = state.set, s = state.lapSum, sg = sagOf(set);
   const items = [];
-  const race = mm(sg.race), stat = mm(sg.stat);
-  if (race > 112) items.push(['bad', `Sits too low: ${race} mm of race sag (aim for 100–105). It starts every bump already deep in its travel. Add preload, or a stiffer spring if static sag is already low.`]);
-  else if (race < 92) items.push(['warn', `Sits too high: ${race} mm of race sag (aim for 100–105). The rear can’t drop into holes. Take some preload off.`]);
-  if (stat < 25) items.push(['bad', `Spring too soft for ${set.rider} kg. Preload is doing the spring’s job, so static sag is only ${stat} mm (aim for 30–40). Grab a stiffer spring from the rack, then reset preload.`]);
-  else if (stat > 45) items.push(['warn', `Spring too stiff for ${set.rider} kg: static sag is ${stat} mm (aim for 30–40). Try a softer spring from the rack.`]);
+  const race = mm(sg.race), stat = mm(sg.stat), fsag = mm(sg.front);
+  if (race > 112) items.push(['bad', `Sits too low: ${race} mm of race sag (aim for 100–105). It starts every bump already deep in its travel. Wind in some shock preload in the Sag panel.`]);
+  else if (race < 92) items.push(['warn', `Sits too high: ${race} mm of race sag (aim for 100–105). The rear can’t drop into holes. Back the shock preload off a little.`]);
+  if (stat < 25) items.push(['bad', `Shock spring too soft for ${set.rider} kg. Preload is doing the spring’s job, so static sag is only ${stat} mm (aim for 30–40). Fit a stiffer spring from the rack, then set the sag again.`]);
+  else if (stat > 45) items.push(['warn', `Shock spring too stiff for ${set.rider} kg: static sag is ${stat} mm (aim for 30–40). Try a softer spring from the rack.`]);
+  if (fsag > 70) items.push(['info', `The fork sits ${fsag} mm deep with the rider on. Stiffer fork springs would balance it with the rear.`]);
+  else if (fsag < 42) items.push(['info', `The fork only sinks ${fsag} mm with the rider on. Softer fork springs would let the front settle.`]);
   if (state.mode === 'sag') {
-    if (!items.length) items.push(['good', `Sag is right: ${race} mm with the rider on, ${stat} mm with the bike alone.`]);
+    if (!items.some((i) => i[0] !== 'info')) items.unshift(race >= 100 && race <= 105
+      ? ['good', `Sag is right: ${race} mm with the rider on, ${stat} mm with the bike alone.`]
+      : ['good', `Sag is close: ${race} mm with the rider on (aim 100–105). Half a turn of shock preload ${race > 105 ? 'in' : 'out'} would nail it.`]);
     return { items, listening: false };
   }
   if (state.mode === 'drop') {
     const d0 = state.drop, d = d0.t > 1.2 ? d0 : d0.last || {};
+    const drop = [];
     if (d.peak > 0.05) {
-      if (d.peak / GEO.travelR > 0.985) items.push(['bad', `Bottomed: ${mm(d.peak)} mm is the end of the stroke. Add compression.`]);
-      if (d.over > 0.012) items.push(['warn', `It sprang ${mm(d.over)} mm back past sag after the hit. Slow the rebound a couple of clicks.`]);
-      if (!items.length) items.push(['good', `Clean drop: ${mm(d.peak)} mm deep, settles without bouncing.`]);
-    } else items.push(['info', 'Dropping the bike from half a metre…']);
-    return { items, listening: false };
+      if (d.peak / GEO.travelR > 0.985) drop.push(['bad', `Bottomed: ${mm(d.peak)} mm is the end of the stroke. Turn the shock’s compression in, high-speed first.`]);
+      if (d.over > 0.012) drop.push(['warn', `It sprang ${mm(d.over)} mm back past sag after the hit. Slow the shock’s rebound a couple of clicks.`]);
+      if (!drop.length) drop.push(['good', `Clean drop: ${mm(d.peak)} mm deep, settles without bouncing.`]);
+    } else drop.push(['info', 'Dropping the bike from half a metre…']);
+    return { items: [...drop, ...items], listening: false };
   }
-  if (!s) return { items, listening: true };
+  if (!s) return { items: items.filter((i) => i[0] !== 'info'), listening: true };
   const ref = (REF_JOLT[state.program] || 4) * Math.max(0.6, set.speed / 38);
-  const ends = s.bottomF && s.bottomR ? 'both ends' : s.bottomR ? 'rear' : 'front';
-  if (s.bottoms) items.push(['bad', `Bottomed out ${s.bottoms === 1 ? 'once' : s.bottoms + ' times'} at the ${ends}. Add 2 clicks of compression. If it still bottoms with sag right, the spring is too soft.`]);
-  if (s.packR != null && s.packR > 0.5) items.push(['bad', `Packing: in the whoops the rear sat ${Math.round(s.packR * 100)}% deep on average. Rebound is too slow to recover between bumps. Open it 2–3 clicks.`]);
-  if (s.kicks) items.push(['bad', `The rear kicked after the hit, springing ${Math.round(s.over * 100)}% back past sag and unloading the tire. Rebound is too fast. Close it 2 clicks.`]);
-  if (s.jolt > ref * 1.2) items.push(['warn', `Harsh: the hardest jolt at the bars was ${s.jolt.toFixed(1)} g. Soften compression so the wheel moves instead of the bike.`]);
+  const times = (n) => (n === 1 ? 'once' : `${n} times`);
+  if (s.bottomR) items.push(['bad', `The rear bottomed out ${times(s.bottomR)}. Turn the shock’s high-speed compression in 2–3 clicks: it handles big, fast hits like landings. If it still bottoms with the sag right, the spring is too soft.`]);
+  if (s.bottomF) items.push(['bad', `The fork bottomed out ${times(s.bottomF)}. Add 2 clicks of fork compression, or fit stiffer fork springs.`]);
+  if (s.packR != null && s.packR > 0.5) items.push(['bad', `Packing: in the whoops the rear sat ${Math.round(s.packR * 100)}% deep on average. The shock’s rebound is too slow to recover between bumps. Open it 2–3 clicks.`]);
+  if (s.kicks) items.push(['bad', `The rear kicked after the hit, springing ${Math.round(s.over * 100)}% back past sag and unloading the tire. The shock’s rebound is too fast. Close it 2 clicks.`]);
+  if (s.jolt > ref * 1.2) {
+    const f = set.fComp < STOCK.fComp, r = set.rComp < STOCK.rComp || set.rHsc < STOCK.rHsc;
+    const where = f && r ? 'on the fork and the shock' : f ? 'on the fork' : r ? 'on the shock' : 'at both ends';
+    items.push(['warn', `Harsh: the hardest jolt at the bars was ${s.jolt.toFixed(1)} g. Soften compression ${where} so the wheel moves instead of the bike.`]);
+  }
   const used = Math.max(s.maxF, s.maxR);
   if (used < 0.7 && !s.bottoms && (state.program === 'jump' || state.program === 'whoops')) items.push(['info', `Only ${Math.round(used * 100)}% of the travel used on the biggest hit. You could soften compression and ride smoother.`]);
   if (!items.some((i) => i[0] === 'bad' || i[0] === 'warn')) items.push(['good', `Balanced. ${Math.round(used * 100)}% of the travel used, no bottoming, tires loaded ${Math.round(s.grip * 100)}% of the time.`]);
-  const rank = { bad: 0, warn: 1, info: 2, good: 3 };
+  const rank = { bad: 0, warn: 1, good: 2, info: 3 };
   items.sort((a, b) => rank[a[0]] - rank[b[0]]);
   return { items, listening: false };
 }
@@ -1831,12 +2428,14 @@ $('#m-more').addEventListener('click', () => { const open = $('#mission').classL
 // ============================================================================ cockpit controls
 function Knob(host, o) {
   const el = document.createElement('div'); el.className = 'kn';
-  el.innerHTML = `<span class="kn-label">${o.label}</span><span class="kn-val"></span>
-    <div class="kn-dial" role="slider" tabindex="0" aria-label="${o.label}" aria-valuemin="${o.min}" aria-valuemax="${o.max}"><svg viewBox="0 0 100 100" aria-hidden="true"></svg><div class="kn-cap"><i></i></div></div>
-    <div class="kn-foot"><button class="kn-step" type="button" aria-label="${o.decLabel}">−</button><span>${o.ends[0]}</span><span>${o.ends[1]}</span><button class="kn-step" type="button" aria-label="${o.incLabel}">+</button></div>`;
+  if (o.tip) el.title = o.tip;
+  el.innerHTML = `<span class="kn-label">${o.label}</span>${o.sub ? `<span class="kn-sub">${o.sub}</span>` : ''}
+    <div class="kn-dial" role="slider" tabindex="0" aria-label="${o.aria || o.label}" aria-valuemin="${o.min}" aria-valuemax="${o.max}"><svg viewBox="0 0 100 100" aria-hidden="true"></svg><div class="kn-cap"><i></i></div></div>
+    <span class="kn-val"></span>
+    <div class="kn-foot"><button class="kn-step" type="button" aria-label="${o.decLabel}">${o.ends[0]}</button><button class="kn-step" type="button" aria-label="${o.incLabel}">${o.ends[1]}</button></div>`;
   host.appendChild(el);
   const dial = el.querySelector('.kn-dial'), cap = el.querySelector('.kn-cap'), svg = el.querySelector('svg'), out = el.querySelector('.kn-val');
-  cap.style.setProperty('--kc', o.color);
+  el.style.setProperty('--kc', o.color);
   const steps = Math.round((o.max - o.min) / o.step);
   const ang = (v) => -135 + (270 * (v - o.min)) / (o.max - o.min);
   const pt = (a, r) => [50 + r * Math.sin((a * Math.PI) / 180), 50 - r * Math.cos((a * Math.PI) / 180)];
@@ -1886,14 +2485,17 @@ function Knob(host, o) {
   return { set: (v) => set(v, false), get: () => value };
 }
 
-const clicksOut = (firm) => { const n = 20 - firm; return `${n} click${n === 1 ? '' : 's'} out`; };
+const clicksOut = (firm) => { const n = 20 - firm; return `${n} click${n === 1 ? '' : 's'}<span class="out"> out</span>`; };
 const ctl = {};
-ctl.comp = Knob($('#knobs-damp'), { label: 'Compression', min: 0, max: 20, step: 1, value: 20 - STOCK.comp, mark: 20 - STOCK.comp, ends: ['Soft', 'Firm'], color: COL.text,
-  decLabel: 'Softer compression', incLabel: 'Firmer compression', fmt: clicksOut, onChange: (v) => change({ comp: 20 - v }) });
-ctl.reb = Knob($('#knobs-damp'), { label: 'Rebound', min: 0, max: 20, step: 1, value: 20 - STOCK.reb, mark: 20 - STOCK.reb, ends: ['Fast', 'Slow'], color: COL.text,
-  decLabel: 'Faster rebound', incLabel: 'Slower rebound', fmt: clicksOut, onChange: (v) => change({ reb: 20 - v }) });
-ctl.pre = Knob($('#knobs-pre'), { label: 'Shock preload', min: 0, max: 25, step: 0.5, value: STOCK.preload, mark: STOCK.preload, ends: ['Low', 'High'], color: COL.blue,
-  decLabel: 'Less preload', incLabel: 'More preload', fmt: (v) => `${v.toFixed(1)} mm · ${(v / 1.5).toFixed(1)} turns`, onChange: (v) => change({ preload: v }) });
+const clicker = (host, key, label, o) => Knob($(host), { label, min: 0, max: 20, step: 1, value: 20 - STOCK[key], mark: 20 - STOCK[key], fmt: clicksOut,
+  onChange: (v) => change({ [key]: 20 - v }), ...o });
+ctl.fComp = clicker('#knobs-fork', 'fComp', 'Compression', { sub: 'going in', tip: 'How hard the fork resists being pushed in. Softer soaks up bumps, firmer stops it diving and bottoming.', ends: ['Soft', 'Firm'], color: COL.gold, aria: 'Fork compression', decLabel: 'Softer fork compression', incLabel: 'Firmer fork compression' });
+ctl.fReb = clicker('#knobs-fork', 'fReb', 'Rebound', { sub: 'coming back', tip: 'How fast the fork springs back out after a bump.', ends: ['Fast', 'Slow'], color: COL.gold, aria: 'Fork rebound', decLabel: 'Faster fork rebound', incLabel: 'Slower fork rebound' });
+ctl.pre = Knob($('#knobs-shock'), { label: 'Preload', sub: 'sets the sag', tip: 'The collar that squeezes the shock spring before the rider gets on. More preload = less sag, the rear sits higher.', min: 0, max: 25, step: 0.5, value: STOCK.preload, mark: STOCK.preload, ends: ['Low', 'High'], color: COL.blue,
+  aria: 'Shock preload', decLabel: 'Less preload', incLabel: 'More preload', fmt: (v) => `${(v / 1.5).toFixed(1)} turns`, onChange: (v) => change({ preload: v }) });
+ctl.rComp = clicker('#knobs-shock', 'rComp', 'Compression', { sub: 'low-speed', tip: 'Low-speed compression: slow movements like rolling bumps, braking and berms.', ends: ['Soft', 'Firm'], color: COL.blue, aria: 'Shock low-speed compression', decLabel: 'Softer low-speed compression', incLabel: 'Firmer low-speed compression' });
+ctl.rHsc = clicker('#knobs-shock', 'rHsc', 'Compression', { sub: 'high-speed', tip: 'High-speed compression: sharp hits like rocks, square edges and landings.', ends: ['Soft', 'Firm'], color: COL.blue, aria: 'Shock high-speed compression', decLabel: 'Softer high-speed compression', incLabel: 'Firmer high-speed compression' });
+ctl.rReb = clicker('#knobs-shock', 'rReb', 'Rebound', { sub: 'coming back', tip: 'How fast the shock springs back out. Too fast kicks, too slow packs down in whoops.', ends: ['Fast', 'Slow'], color: COL.blue, aria: 'Shock rebound', decLabel: 'Faster shock rebound', incLabel: 'Slower shock rebound' });
 
 function stepper(id, fn) {
   const host = $(id);
@@ -1908,38 +2510,63 @@ function stepper(id, fn) {
   host.addEventListener('keydown', (e) => { const b = e.target.closest('[data-d]'); if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); fn(+b.dataset.d); } });
 }
 stepper('#spring-step', (d) => change({ spring: clamp(+(state.set.spring + d * 0.2).toFixed(1), 3.8, 7.2) }));
+stepper('#fspring-step', (d) => change({ forkSpring: clamp(+(state.set.forkSpring + d * 0.01).toFixed(2), 0.38, 0.56) }));
 stepper('#rider-step', (d) => change({ rider: clamp(state.set.rider + d, 45, 125) }));
+stepper('#pre-step', (d) => change({ preload: clamp(state.set.preload + d * 0.5, 0, 25) }));
 const speedEl = $('#speed');
 speedEl.addEventListener('input', () => change({ speed: +speedEl.value }));
 $('#programs').addEventListener('click', (e) => { const b = e.target.closest('[data-prog]'); if (b) setProgram(b.dataset.prog); });
 $('#modes').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) setMode(b.dataset.mode); });
-$('#b-rider').addEventListener('click', () => { state.riderOn = !state.riderOn; newSim(); syncControls(); renderCoach(); });
+$('#b-measure').addEventListener('click', () => {
+  if (state.mode !== 'sag') { setMode('sag'); return; }
+  state.riderOn = !state.riderOn; newSim(); syncControls(); renderCoach();
+});
 $('#b-stock').addEventListener('click', () => { state.set = { ...STOCK, speed: state.set.speed }; state.sim.setSettings(state.set); resetStats(); syncControls(); renderMission(); renderCoach(); });
 $('#b-problem').addEventListener('click', () => loadMission(state.mission));
 
-function coilSvg(rate) {
-  const c = '#' + springColor(rate).getHexString(), w = 1.2 + (rate - 3.8) * 0.45;
+function coilSvg(rate, fork) {
+  const c = '#' + (fork ? forkSpringColor(rate) : springColor(rate)).getHexString(), w = fork ? 1 + (rate - 0.38) * 9 : 1.2 + (rate - 3.8) * 0.45;
   let d = 'M 4 3';
   for (let i = 0; i < 6; i++) d += ` L 18 ${5 + i * 4} L 4 ${7 + i * 4}`;
   return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round"/>`;
 }
 function rangeFill(el, c) { el.style.setProperty('--p', `${((el.value - el.min) / (el.max - el.min)) * 100}%`); if (c) el.style.setProperty('--c', c); }
 
+function sagBar(id, val, lo, hi, a, b) {
+  const el = $(id), pct = (v) => `${clamp(((v - lo) / (hi - lo)) * 100, 0, 100)}%`;
+  el.querySelector('b').textContent = `${val} mm`;
+  const band = el.querySelector('.sb-band'); band.style.left = pct(a); band.style.width = `calc(${pct(b)} - ${pct(a)})`;
+  el.querySelector('.sb-mark').style.left = pct(val);
+  el.classList.toggle('ok', val >= a && val <= b); el.classList.toggle('off', val < a - 8 || val > b + 8);
+}
 function syncControls() {
   const s = state.set;
-  ctl.comp.set(20 - s.comp); ctl.reb.set(20 - s.reb); ctl.pre.set(s.preload);
+  for (const k of ['fComp', 'fReb', 'rComp', 'rHsc', 'rReb']) ctl[k].set(20 - s[k]);
+  ctl.pre.set(s.preload);
   $('#spring-val').textContent = s.spring.toFixed(1);
-  $('#spring-sub').textContent = Math.abs(s.spring - STOCK.spring) < 0.01 ? 'kg/mm · stock' : `kg/mm · fork ${P.forkRateFor(s.spring).toFixed(2)}`;
+  const vsStock = (v, st, eps) => Math.abs(v - st) < eps ? 'stock' : v > st ? 'stiffer' : 'softer';
+  $('#spring-sub').innerHTML = `kg/mm<br>${vsStock(s.spring, STOCK.spring, 0.01)}`;
   $('#coil').innerHTML = coilSvg(s.spring);
+  $('#fspring-val').textContent = s.forkSpring.toFixed(2);
+  $('#fspring-sub').innerHTML = `kg/mm<br>${vsStock(s.forkSpring, STOCK.forkSpring, 0.001)}`;
+  $('#fcoil').innerHTML = coilSvg(s.forkSpring, true);
   $('#rider-val').textContent = `${s.rider} kg`;
   const dk = s.rider - STOCK.rider;
-  $('#rider-sub').textContent = dk === 0 ? 'stock setup: 78 kg' : `${dk > 0 ? '+' : '−'}${Math.abs(dk)} kg vs stock`;
+  $('#rider-sub').textContent = dk === 0 ? 'stock rider' : `${dk > 0 ? '+' : '−'}${Math.abs(dk)} vs stock`;
+  $('#pre-val').textContent = `${(s.preload / 1.5).toFixed(1)} turns`;
+  $('#pre-sub').textContent = `${s.preload.toFixed(1)} mm`;
+  const sg = sagOf(s);
+  sagBar('#sb-race', mm(sg.race), 70, 140, 100, 105);
+  sagBar('#sb-stat', mm(sg.stat), 0, 70, 30, 40);
+  $('#fork-sag').innerHTML = `Fork sag <b>${mm(sg.front)} mm</b> · rider on`;
+  $('#sag-note').textContent = state.mode === 'sag' ? (state.riderOn ? 'measuring · rider on' : 'measuring · bike alone') : 'set this first';
+  $('#b-measure').textContent = state.mode !== 'sag' ? 'Measure sag' : state.riderOn ? 'Rider off' : 'Rider back on';
+  $('#b-measure').classList.toggle('hot-btn', state.mode === 'sag');
   speedEl.value = s.speed; $('#speed-val').textContent = `${s.speed} km/h`; rangeFill(speedEl, COL.gold);
   $$('#programs [data-prog]').forEach((b) => b.setAttribute('aria-pressed', state.mode === 'ride' && b.dataset.prog === state.program));
   $$('#modes [data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === state.mode));
-  const rb = $('#b-rider'); rb.hidden = state.mode !== 'sag'; rb.textContent = state.riderOn ? 'Rider off' : 'Rider on';
   $('#lane-note').textContent = state.mode === 'ride' ? 'running' : 'stopped';
-  bike.setSpring(s.spring); rack.sync(s.spring);
+  bike.setSpring(s.spring); rack.sync(s.spring, s.forkSpring);
   scale.disp.userData.tex.redraw(s.rider, state.mode === 'sag' && !state.riderOn);
   board.tex.redraw(state.program, state.mode);
   standing.group.visible = state.mode === 'sag' && !state.riderOn;
@@ -1954,7 +2581,7 @@ function selectTab(id) {
 }
 tabs.forEach((t) => t.addEventListener('click', () => selectTab(t.dataset.tab)));
 function focusModule(id) {
-  if (phoneQ.matches) { selectTab(id); return; }
+  if (tabQ.matches) { selectTab(id); return; }
   const m = document.getElementById(id);
   m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash');
   setTimeout(() => m.classList.remove('flash'), 1400);
@@ -2039,10 +2666,9 @@ function paintInstruments() {
   const sc = scopeCv.getBoundingClientRect();
   if (sc.width > 0) { const { W, H, k } = fitCanvas(scopeCv); drawScope(scopeCv.getContext('2d'), W, H, k, state.tele, state.flashes, sim.sagFrac, sim.t, 10, false); }
 }
-const read = { sag: $('#r-sag'), bottom: $('#r-bottom'), jolt: $('#r-jolt'), grip: $('#r-grip') };
+const read = { bottom: $('#r-bottom'), jolt: $('#r-jolt'), grip: $('#r-grip') };
 function paintReadouts() {
   const sim = state.sim, run = sim.summary(), s = state.lapSum, sg = sagOf(state.set);
-  read.sag.textContent = `${mm(state.mode === 'sag' && !state.riderOn ? sg.stat : sg.race)} mm`;
   const bottoms = Math.max(run.bottoms, s ? s.bottoms : 0);
   const dropBottom = state.mode === 'drop' && state.drop.peak / GEO.travelR > 0.985;
   read.bottom.textContent = state.mode === 'ride' ? bottoms : dropBottom ? 1 : 0;
@@ -2063,7 +2689,7 @@ const PRESETS = {
   orbit: { yaw: 0.3, pitch: 0.13, dist: 6.4, tx: -0.55, oy: 0.25 },
   side: { yaw: 0, pitch: 0.05, dist: 5.0, tx: 0, oy: 0.18 },
   chase: { yaw: -1.2, pitch: 0.27, dist: 5.2, tx: 0.7, oy: 0.35 },
-  shock: { yaw: Math.PI - 0.38, pitch: 0.1, dist: 1.8, tx: -0.12, oy: -0.02 },
+  shock: { yaw: Math.PI - 0.5, pitch: 0.06, dist: 1.7, tx: -0.16, oy: -0.04 },
 };
 // phones: the room is narrower, so come closer and centre the bike
 const PHONE = { orbit: { dist: 4.6, tx: 0, oy: 0.1, pitch: 0.12 }, side: { dist: 3.7, oy: 0.12 }, chase: { dist: 4.2 }, shock: { dist: 1.7 } };
@@ -2158,21 +2784,25 @@ function setHover(pk) {
   canvas.classList.toggle('pointing', !!pk);
 }
 function activate(pk) {
-  if (pk.kind === 'spring') { change({ spring: pk.rate }); focusModule('m-spring'); flashTag(`Fitted the ${pk.rate.toFixed(1)} kg/mm spring`); return; }
+  if (pk.kind === 'spring') { change({ spring: pk.rate }); focusModule('m-shock'); flashTag(`Fitted the ${pk.rate.toFixed(1)} kg/mm shock spring`); return; }
+  if (pk.kind === 'fspring') { change({ forkSpring: pk.rate }); focusModule('m-fork'); flashTag(`Fitted ${pk.rate.toFixed(2)} kg/mm fork springs`); return; }
   stationAction(pk.key);
 }
 function stationAction(key) {
-  if (key === 'rack') { focusModule('m-spring'); flashTag('Click a spring on the rack to fit it'); }
-  else if (key === 'desk') focusModule('m-damp');
-  else if (key === 'scale') { focusModule('m-rider'); if (state.mode !== 'sag') setMode('sag'); }
+  if (key === 'rack') { focusModule('m-shock'); flashTag('Click a spring: shock springs on top, fork springs below'); }
+  else if (key === 'desk') focusModule('m-gauges');
+  else if (key === 'scale') { focusModule('m-sag'); if (state.mode !== 'sag') setMode('sag'); }
   else if (key === 'board') focusModule('m-track');
   else if (key === 'hoist') { setMode('drop'); focusModule('m-gauges'); }
+  else if (key === 'fork') { focusModule('m-fork'); flashTag('Fork: springs, compression and rebound'); }
+  else if (key === 'shock') { focusModule('m-shock'); flashTag('Shock: spring, preload, two compressions, rebound'); }
 }
 
 // ============================================================================ hotspots, floating tags, pop-ups
-const STATIONS = [['rack', 'Spring rack'], ['desk', 'Control desk'], ['scale', 'Rider scale'], ['board', 'Track board'], ['hoist', 'Drop hoist']];
+const STATIONS = [['rack', 'Spring rack'], ['desk', 'Control desk'], ['scale', 'Rider scale'], ['board', 'Track board'], ['hoist', 'Drop hoist'], ['fork', 'Fork'], ['shock', 'Shock']];
+const ON_BIKE = { fork: 'f', shock: 'r' };
 const hotEls = STATIONS.map(([key, label]) => {
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'hot'; b.innerHTML = `<i></i><span>${label}</span>`;
+  const b = document.createElement('button'); b.type = 'button'; b.className = `hot${ON_BIKE[key] ? ' bike ' + ON_BIKE[key] : ''}`; b.innerHTML = `<i></i><span>${label}</span>`;
   b.setAttribute('aria-label', label);
   b.addEventListener('click', () => stationAction(key));
   $('#hots').appendChild(b);
@@ -2181,7 +2811,7 @@ const hotEls = STATIONS.map(([key, label]) => {
 const tagEl = document.createElement('div'); tagEl.className = 'tag3d'; tagEl.hidden = true; $('#tags').appendChild(tagEl);
 let flash = null;
 function flashTag(text) { flash = { text, t: 2.2 }; }
-const projV = new THREE.Vector3();
+const projV = new THREE.Vector3(), hotV = new THREE.Vector3();
 function toScreen(v) {
   projV.copy(v).project(camera);
   return { x: (projV.x * 0.5 + 0.5) * stageSize.w, y: (-projV.y * 0.5 + 0.5) * stageSize.h, behind: projV.z > 1, w: stageSize.w, h: stageSize.h };
@@ -2189,8 +2819,9 @@ function toScreen(v) {
 function updateOverlays(dt, parts) {
   const close = cam.mode === 'shock' || cam.dist < 2.6;
   for (const h of hotEls) {
-    const s = toScreen(STATION_POS[h.key]);
-    const off = close || s.behind || s.x < 10 || s.x > s.w - 10 || s.y < 40 || s.y > s.h - 10;
+    const onBike = ON_BIKE[h.key];
+    const s = toScreen(onBike ? hotV.copy(bike.anchors[h.key]).applyMatrix4(bike.group.matrixWorld) : STATION_POS[h.key]);
+    const off = (close && !onBike) || (onBike && cam.mode === 'shock') || s.behind || s.x < 10 || s.x > s.w - 10 || s.y < 40 || s.y > s.h - 10;
     h.b.style.visibility = off ? 'hidden' : 'visible';
     if (!off) h.b.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -50%)`;
   }
