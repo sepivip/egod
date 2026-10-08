@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Dirt Bike Suspension</title>
+<meta name="description" content="An interactive explainer: how springs, preload, compression and rebound decide whether a dirt bike floats or bucks you off.">
+<meta name="theme-color" content="#0c0b0a">
+<meta property="og:title" content="Dirt Bike Suspension · egod.space explainers">
+<meta property="og:description" content="Play with sag, springs, compression and rebound on a live dirt bike and see what every click does.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://egod.space/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='30' fill='none' stroke='%23e3ad4b' stroke-width='12'/><circle cx='50' cy='50' r='8' fill='%235ea4e8'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,300..900;1,62..125,400..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: a long-scroll ride. Narrow reading column, full-bleed cinematic stages between chapters,
+     and a two-panel workshop at the end (monitor left and sticky, controls right). */
+  :root {
+    color-scheme: dark;
+    --ink: #0c0b0a;          /* night ground */
+    --panel: #15140f;        /* raised surfaces */
+    --panel-2: #1d1b16;
+    --line: rgba(232, 220, 198, 0.13);
+    --text: #e8dcc6;         /* dusty paper */
+    --dim: #9c9180;
+    --faint: #6b6355;
+    --gold: #e3ad4b;         /* fork: gold-anodised tubes */
+    --blue: #5ea4e8;         /* shock: blue spring */
+    --clay: #a8693c;         /* dirt */
+    --good: #8cc88a;
+    --warn: #f0a35c;
+    --bad: #ef6150;
+    --display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
+    --body: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --data: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --gutter: clamp(16px, 4vw, 40px);
+    --read: 40rem;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--gold); color: var(--ink); }
+  a { color: var(--gold); text-underline-offset: 3px; }
+  a:hover { color: var(--text); }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+
+  .grain {
+    position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) var(--gutter) 14px;
+    font-family: var(--data); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--dim);
+  }
+  .topbar a { color: var(--dim); text-decoration: none; }
+  .topbar a:hover { color: var(--text); }
+  .topbar .crumb b { color: var(--text); font-weight: 600; }
+  .topbar .to-lab {
+    color: var(--gold); border: 1px solid rgba(227, 173, 75, 0.45); border-radius: 999px; padding: 5px 12px; white-space: nowrap;
+    background: rgba(12, 11, 10, 0.45);
+  }
+  .topbar .to-lab:hover { color: var(--ink); background: var(--gold); }
+  @media (max-width: 560px) { .topbar .home { display: none; } }
+
+  /* ---------- hero ---------- */
+  .hero { position: relative; }
+  .hero canvas { display: block; width: 100%; height: clamp(440px, 74vh, 760px); }
+  .hero-copy {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 0 var(--gutter) clamp(24px, 5vh, 56px);
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: var(--data); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold); margin: 0 0 0.9rem;
+  }
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+  h1 {
+    font-stretch: 125%; font-weight: 850; text-transform: uppercase;
+    font-size: clamp(2.4rem, 6.6vw, 5.8rem); line-height: 0.9; letter-spacing: -0.015em;
+    max-width: 11ch;
+  }
+  h1 em { font-style: normal; color: var(--gold); }
+  .hero-sub { max-width: 31rem; margin: 1.2rem 0 0; color: var(--text); font-size: clamp(1rem, 1.6vw, 1.15rem); }
+  .hero-hint {
+    margin-top: 1.1rem; font-family: var(--data); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim);
+  }
+
+  /* ---------- chapters ---------- */
+  main { display: block; }
+  .chapter { padding-block: clamp(64px, 11vh, 128px) 0; }
+  .read { max-width: var(--read); margin: 0 auto; padding-inline: var(--gutter); }
+  .read > * + * { margin-top: 1.05em; }
+  .chapter-no {
+    display: flex; align-items: center; gap: 0.8rem;
+    font-family: var(--data); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+  }
+  .chapter-no::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  h2 {
+    font-stretch: 118%; font-weight: 800; text-transform: uppercase;
+    font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 0.95; letter-spacing: -0.01em;
+  }
+  h3 { font-stretch: 110%; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.01em; }
+  p { margin: 0; }
+  .read p { color: var(--text); }
+  .lede { font-size: 1.18rem; }
+  .muted { color: var(--dim); }
+  .k-front { color: var(--gold); font-weight: 600; }
+  .k-rear { color: var(--blue); font-weight: 600; }
+  .num { font-family: var(--data); font-size: 0.92em; }
+
+  .callout {
+    border-left: 2px solid var(--gold); padding: 0.2rem 0 0.2rem 1rem; color: var(--text);
+  }
+  .defs { display: grid; gap: 0.9rem; }
+  .defs div { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 1rem; align-items: baseline; }
+  .defs dt { font-family: var(--data); font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
+  .defs dd { margin: 0; }
+  @media (max-width: 520px) { .defs div { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; } }
+
+  /* ---------- figures ---------- */
+  .figure { margin: clamp(36px, 6vh, 64px) auto 0; max-width: 1240px; padding-inline: var(--gutter); }
+  .stage {
+    position: relative; overflow: hidden; border-radius: 14px; background: #0f0e0c;
+    border: 1px solid var(--line);
+  }
+  .stage canvas { display: block; width: 100%; }
+  .caption { margin-top: 0.8rem; font-size: 0.9rem; color: var(--dim); max-width: 46rem; }
+  .caption b { color: var(--text); font-weight: 600; }
+
+  .overlay-tag {
+    position: absolute; font-family: var(--data); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text); background: rgba(12, 11, 10, 0.62); border: 1px solid var(--line); padding: 5px 9px; border-radius: 999px;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+
+  /* two-lane comparison */
+  .lanes-readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+  .lane-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+  .lane-card h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; font-stretch: 112%; }
+  .lane-card .row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; color: var(--dim); }
+  .lane-card .row b { font-family: var(--data); color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* lab-style controls shared by figures */
+  .rig { display: grid; gap: 14px; margin-top: 14px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) { .rig.two { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+  .card h3 { margin-bottom: 0.6rem; }
+  .controls { display: grid; gap: 16px; }
+
+  .ctl { display: grid; gap: 6px; }
+  .ctl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .ctl-head label { font-weight: 600; font-size: 0.95rem; }
+  .ctl-val { font-family: var(--data); font-size: 0.85rem; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ctl-val small { color: var(--dim); font-size: 0.78rem; }
+  .ctl-help { font-size: 0.82rem; color: var(--dim); line-height: 1.45; }
+  .ctl-ends { display: flex; justify-content: space-between; font-family: var(--data); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; cursor: pointer;
+    --pct: 50%; --c: var(--gold); --stock: 50%;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 999px;
+    background:
+      linear-gradient(to right, transparent calc(var(--stock) - 1px), rgba(232,220,198,.55) calc(var(--stock) - 1px), rgba(232,220,198,.55) calc(var(--stock) + 1px), transparent calc(var(--stock) + 1px)),
+      linear-gradient(to right, var(--c) var(--pct), rgba(232,220,198,.14) var(--pct));
+  }
+  input[type=range]::-moz-range-track {
+    height: 6px; border-radius: 999px;
+    background:
+      linear-gradient(to right, transparent calc(var(--stock) - 1px), rgba(232,220,198,.55) calc(var(--stock) - 1px), rgba(232,220,198,.55) calc(var(--stock) + 1px), transparent calc(var(--stock) + 1px)),
+      linear-gradient(to right, var(--c) var(--pct), rgba(232,220,198,.14) var(--pct));
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; margin-top: -7px;
+    background: var(--text); border: 3px solid var(--c); box-shadow: 0 1px 6px rgba(0,0,0,.5);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 3px solid var(--c);
+  }
+  input[type=range]:focus-visible { outline: none; }
+  input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(227,173,75,.35); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    padding: 8px 13px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.01em;
+    transition: border-color .2s, background .2s;
+  }
+  .btn:hover { border-color: rgba(232,220,198,.35); }
+  .btn[aria-pressed="true"] { background: var(--text); color: var(--ink); border-color: var(--text); }
+  .btn.small { padding: 6px 11px; font-size: 0.78rem; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat { background: var(--panel-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+  .stat span { font-size: 0.75rem; color: var(--dim); letter-spacing: 0.04em; }
+  .stat b { font-family: var(--data); font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat em { font-style: normal; font-size: 0.78rem; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--data); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap;
+  }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .good { color: var(--good); } .warn { color: var(--warn); } .bad { color: var(--bad); } .info { color: var(--dim); }
+
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart-wrap { overflow-x: auto; }
+
+  /* ---------- lab ---------- */
+  .lab { margin-top: clamp(36px, 6vh, 64px); padding-inline: var(--gutter); max-width: 1440px; margin-inline: auto; }
+  .lab-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .monitor { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 4; background: var(--ink); padding-block: 8px; margin-block: -8px; }
+  .monitor .stage canvas { height: clamp(250px, 42vh, 560px); }
+  .hud {
+    position: absolute; left: 10px; right: 10px; bottom: 10px; display: grid; gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .hud div {
+    background: rgba(12, 11, 10, 0.72); border: 1px solid var(--line); border-radius: 10px; padding: 6px 9px;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); min-width: 0;
+  }
+  .hud span { display: block; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud em { font-style: normal; }
+  .hud b { font-family: var(--data); font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .stage-tools { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .stage-tools .btn { background: rgba(12,11,10,.7); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .stage-tools .btn[aria-pressed="true"] { background: var(--text); }
+  .scenario-tag { top: 10px; left: 10px; }
+  .coach-line {
+    margin-top: 8px; display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; line-height: 1.45;
+    min-height: 2.9em;
+  }
+  .coach-line .pill { margin-top: 2px; }
+  .tele { margin-top: 8px; }
+  .tele canvas { display: block; width: 100%; height: 120px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; font-size: 0.78rem; color: var(--dim); }
+  .legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+
+  .scenarios { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (min-width: 560px) { .scenarios { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .scn {
+    text-align: left; cursor: pointer; border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0;
+  }
+  .scn b { font-family: var(--display); font-stretch: 112%; font-weight: 700; font-size: 0.95rem; }
+  .scn span { font-size: 0.75rem; color: var(--dim); line-height: 1.35; }
+  .scn[aria-pressed="true"] { border-color: var(--gold); background: #231e14; }
+  .scn .done { color: var(--good); }
+
+  .brief { display: grid; gap: 10px; }
+  .brief p { font-size: 0.95rem; }
+  .goal { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); }
+  .goal p { font-size: 0.9rem; }
+  .group-title { font-family: var(--data); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); display: flex; align-items: center; gap: 10px; }
+  .group-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .spring-note { font-family: var(--data); font-size: 0.78rem; color: var(--dim); }
+
+  .coach-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .coach-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; font-size: 0.92rem; line-height: 1.45; }
+  .coach-list li .pill { margin-top: 2px; }
+
+  @media (min-width: 1040px) {
+    .lab-grid { grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr); }
+    .monitor { top: 12px; margin-block: 0; padding-block: 0; }
+    .monitor .stage canvas { height: clamp(320px, 50vh, 600px); }
+  }
+  @media (max-width: 1039px) {
+    .monitor .coach-line { display: none; }
+    .monitor .stage canvas { height: clamp(230px, 36vh, 420px); }
+    .monitor .tele canvas { height: 76px; }
+    .monitor .legend { display: none; }
+    .hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; left: 8px; right: 8px; bottom: 8px; }
+    .hud div { padding: 5px 7px; }
+    .hud b { font-size: 0.85rem; }
+  }
+  @media (max-width: 520px) { .hud em { display: none; } }
+  @media (max-width: 420px) { .hud span { font-size: 0.58rem; } .hud b { font-size: 0.8rem; } }
+
+  /* ---------- cheat sheet ---------- */
+  .sheet { margin-top: 1.6rem; display: grid; gap: 10px; }
+  .sheet-row {
+    display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 16px; align-items: center;
+    padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .sheet-row b { display: block; font-weight: 600; }
+  .sheet-row span { font-size: 0.88rem; color: var(--dim); }
+  .sheet-row .fix { font-size: 0.92rem; color: var(--text); }
+  @media (max-width: 640px) { .sheet-row { grid-template-columns: minmax(0, 1fr); gap: 8px; } .sheet-row .btn { justify-self: start; } }
+
+  ol.steps { padding-left: 2.1rem; display: grid; gap: 0.5rem; }
+  ol.steps li::marker { font-family: var(--data); color: var(--gold); }
+
+  footer {
+    margin-top: clamp(80px, 12vh, 140px); border-top: 1px solid var(--line);
+    padding: 28px var(--gutter) calc(28px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; align-items: baseline;
+    font-size: 0.85rem; color: var(--dim);
+  }
+  footer p { max-width: 46rem; }
+
+  #lanes { height: clamp(420px, 52vw, 600px); }
+  #sag, #drop { height: clamp(300px, 36vw, 440px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn, .scn { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topbar">
+  <span class="crumb"><a href="/" class="home">egod.space / </a><a href="/explainers/">Explainers / <b>01 Suspension</b></a></span>
+  <a href="/explainers/dirt-bike-suspension/" class="to-lab">3D lab →</a>
+</header>
+
+<section class="hero" aria-label="Introduction">
+  <canvas id="hero" aria-label="A dirt bike riding over rolling dirt at dusk, its fork and shock moving as it hits bumps" role="img"></canvas>
+  <div class="hero-copy">
+    <p class="eyebrow">Interactive explainer · Dirt bikes</p>
+    <h1>How a dirt bike <em>floats</em></h1>
+    <p class="hero-sub">Springs hold you up. Oil decides how fast everything moves. A few clicks on two dials are the difference between a bike that glides and one that throws you off. Scroll down and play with every one of them.</p>
+    <p class="hero-hint">↓ Start riding</p>
+  </div>
+</section>
+
+<main>
+
+<!-- Chapter 1 -->
+<section class="chapter" id="why">
+  <div class="read">
+    <p class="chapter-no">Part 1</p>
+    <h2>Two jobs, one wheel</h2>
+    <p class="lede">A modern motocross bike has about <span class="num">300 mm</span> of suspension travel at each wheel. That is roughly the length of a school ruler, and it does two jobs at the same time.</p>
+    <p>First, it keeps the tires pressed into the dirt. A tire in the air can't steer, brake or push you forward. Second, it keeps the hits out of your body, so your arms and legs last the whole ride.</p>
+    <p>Below, the same bike rides the same rough track twice. The top one has its suspension locked solid. Watch the white line: it traces the rider's head.</p>
+  </div>
+  <div class="figure">
+    <div class="stage">
+      <canvas id="lanes" aria-label="Two bikes on the same bumpy track. The rigid bike skips and bounces; the suspended bike stays smooth." role="img"></canvas>
+      <span class="overlay-tag" style="top:10px;left:10px">Suspension locked</span>
+      <span class="overlay-tag" style="top:calc(50% + 10px);left:10px">Suspension working</span>
+    </div>
+    <div class="lanes-readout" aria-live="polite">
+      <div class="lane-card">
+        <h3>Locked</h3>
+        <div class="row">Hardest jolt <b id="l0-jolt">…</b></div>
+        <div class="row">Tires touching the ground <b id="l0-grip">…</b></div>
+      </div>
+      <div class="lane-card">
+        <h3>Working</h3>
+        <div class="row">Hardest jolt <b id="l1-jolt">…</b></div>
+        <div class="row">Tires touching the ground <b id="l1-grip">…</b></div>
+      </div>
+    </div>
+    <p class="caption">Same speed (30 km/h), same rocks and rollers. Jolt is the peak acceleration at the handlebars, in g: 1 g is what you feel standing still. The locked bike spends a lot of its time in the air, which is why it can't turn or stop.</p>
+  </div>
+</section>
+
+<!-- Chapter 2 -->
+<section class="chapter" id="spring">
+  <div class="read">
+    <p class="chapter-no">Part 2</p>
+    <h2>The spring holds you up</h2>
+    <p class="lede">Inside each fork leg, and wrapped around the rear shock, is a steel coil spring. Its stiffness is printed on it in kilograms per millimetre.</p>
+    <p>A <span class="num">5.4 kg/mm</span> shock spring needs 5.4 kg to squash it by one millimetre. The rear shock sits in a linkage that multiplies its movement, so the wheel moves about three times further than the shock itself.</p>
+    <p>When you climb on, the bike sinks into its travel. That sink is called <b>sag</b>, and it is the first thing every suspension tuner measures.</p>
+    <dl class="defs">
+      <div><dt>Race sag</dt><dd>Rider on, in full gear, standing. Aim for about <span class="num">100–105 mm</span> at the rear: a third of the travel. That leaves room to push into holes as well as soak up bumps.</dd></div>
+      <div><dt>Static sag</dt><dd>The bike alone, on its wheels. Aim for about <span class="num">30–40 mm</span>. This number tells you whether the spring suits your weight.</dd></div>
+      <div><dt>Preload</dt><dd>A threaded ring on the shock that squeezes the spring before you sit on it. One full turn is <span class="num">1.5 mm</span>.</dd></div>
+    </dl>
+  </div>
+  <div class="figure">
+    <div class="rig two">
+      <div class="stage">
+        <canvas id="sag" aria-label="Close-up of the bike standing still, with a ruler showing how far the rear has sagged" role="img"></canvas>
+        <div class="stage-tools"><button class="btn small" id="sag-rider" aria-pressed="true" type="button">Rider on</button></div>
+      </div>
+      <div class="card">
+        <div class="controls" id="sag-controls"></div>
+        <div class="stat-grid" style="margin-top:16px">
+          <div class="stat"><span>Race sag (rider on)</span><b id="sag-race">…</b><em id="sag-race-v"></em></div>
+          <div class="stat"><span>Static sag (bike alone)</span><b id="sag-static">…</b><em id="sag-static-v"></em></div>
+        </div>
+      </div>
+    </div>
+    <div class="card chart" style="margin-top:14px">
+      <h3>Why preload can't fix the wrong spring</h3>
+      <div class="chart-wrap"><svg id="sag-chart" viewBox="0 0 960 320" role="img" aria-label="Spring force against rear wheel travel, with the load lines for bike alone and bike plus rider"></svg></div>
+      <p class="caption" style="margin-top:6px">The <b style="color:var(--blue)">blue line</b> is how hard the rear spring pushes back at each point of its travel. Where it crosses a load line, the bike stops sinking: that is the sag. Preload slides the line up; a stiffer spring makes it <i>steeper</i>. Try a 105 kg rider: you can wind in preload until race sag looks right, but static sag collapses toward zero. Only a stiffer spring fixes both.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Chapter 3 -->
+<section class="chapter" id="damper">
+  <div class="read">
+    <p class="chapter-no">Part 3</p>
+    <h2>Oil controls the speed</h2>
+    <p class="lede">A spring on its own would bounce forever, like a pogo stick. The damper is what stops it.</p>
+    <p>Inside the shock and fork, a piston pushes oil through small holes and stacks of thin steel washers called shims. Oil resists being rushed, so the damper fights <i>speed</i>, not distance. Each end has two main adjusters, counted in clicks out from fully closed:</p>
+    <dl class="defs">
+      <div><dt>Compression</dt><dd>How hard the suspension resists being squashed. Firmer holds you up on big landings, but sends small sharp hits straight into your hands.</dd></div>
+      <div><dt>Rebound</dt><dd>How fast it springs back out. Too fast and the bike bucks like a pogo stick. Too slow and it can't come back up before the next bump arrives.</dd></div>
+    </dl>
+    <p>Here the bike is dropped from <span class="num">50 cm</span> onto flat ground, over and over. The chart records the rear wheel. Change the clicks and compare the new trace with the faded ones.</p>
+  </div>
+  <div class="figure">
+    <div class="rig two">
+      <div class="stage">
+        <canvas id="drop" aria-label="The bike dropping onto flat ground and bouncing" role="img"></canvas>
+        <div class="stage-tools"><button class="btn small" id="drop-xray" aria-pressed="false" type="button">X-ray</button></div>
+      </div>
+      <div class="card">
+        <div class="controls" id="drop-controls"></div>
+        <div class="stat-grid" style="margin-top:16px">
+          <div class="stat"><span>Deepest point</span><b id="drop-peak">…</b></div>
+          <div class="stat"><span>Springs back past sag by</span><b id="drop-over">…</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Rear wheel travel after the drop</h3>
+      <canvas id="drop-chart" style="display:block;width:100%;height:220px" aria-label="Rear wheel travel over time after each drop" role="img"></canvas>
+      <div class="legend"><span><i style="background:var(--blue)"></i>This drop</span><span><i style="background:rgba(232,220,198,.35)"></i>Earlier drops</span><span><i style="background:transparent;border-top:2px dashed var(--dim);height:0"></i>Sag point</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Chapter 4 -->
+<section class="chapter" id="lab">
+  <div class="read">
+    <p class="chapter-no">Part 4</p>
+    <h2>The workshop</h2>
+    <p class="lede">Now the whole bike, on real terrain, with every adjuster at once. Each scene below starts with something set wrong. Read the problem, fix it, and watch the trace underneath the bike.</p>
+    <p class="muted">The <span class="k-front">gold</span> line is the fork, the <span class="k-rear">blue</span> line is the shock. The higher the line, the deeper the suspension is squashed. Touch the red line and you've bottomed out.</p>
+  </div>
+  <div class="lab">
+    <div class="lab-grid">
+      <div class="monitor" id="monitor">
+        <div class="stage">
+          <canvas id="labc" aria-label="The bike riding the selected scene with the current settings" role="img"></canvas>
+          <span class="overlay-tag scenario-tag" id="lab-tag">Trail loop</span>
+          <div class="stage-tools">
+            <button class="btn small" id="lab-slow" aria-pressed="false" type="button">Slow-mo</button>
+            <button class="btn small" id="lab-xray" aria-pressed="false" type="button">X-ray</button>
+            <button class="btn small" id="lab-pause" aria-pressed="false" type="button">Pause</button>
+          </div>
+          <div class="hud" aria-live="off">
+            <div><span>Race sag</span><b id="hud-sag">…</b></div>
+            <div><span>Travel<em> used</em></span><b id="hud-travel">…</b></div>
+            <div><span>Bottomed</span><b id="hud-bottom">…</b></div>
+            <div><span>Jolt</span><b id="hud-jolt">…</b></div>
+          </div>
+        </div>
+        <div class="tele">
+          <canvas id="tele" aria-label="Live trace of fork and shock travel" role="img"></canvas>
+          <div class="legend"><span><i style="background:var(--gold)"></i>Fork travel</span><span><i style="background:var(--blue)"></i>Shock travel</span><span><i style="background:var(--bad)"></i>Bottomed</span></div>
+        </div>
+        <div class="coach-line" id="coach-top" aria-live="polite"></div>
+      </div>
+
+      <div class="panel" style="display:grid;gap:16px;min-width:0">
+        <div class="card">
+          <h3>Pick a scene</h3>
+          <div class="scenarios" id="scenarios" role="group" aria-label="Scenes"></div>
+        </div>
+        <div class="card brief" id="brief" aria-live="polite"></div>
+        <div class="card controls" id="lab-controls"></div>
+        <div class="card">
+          <h3>Coach</h3>
+          <ul class="coach-list" id="coach" aria-live="polite"></ul>
+          <p class="caption" style="margin-top:12px">The coach reads one full lap of data. Change something and it starts listening again.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Chapter 5 -->
+<section class="chapter" id="cheat">
+  <div class="read">
+    <p class="chapter-no">Part 5</p>
+    <h2>The cheat sheet</h2>
+    <p class="lede">Real tuners work in a fixed order, and change one thing at a time.</p>
+    <ol class="steps">
+      <li><b>Springs and sag first.</b> Get race sag near 100 mm with preload, then check static sag. If static sag is off, change the spring, not the preload.</li>
+      <li><b>Then compression</b>, for how the bike handles hits.</li>
+      <li><b>Then rebound</b>, for how it recovers from them.</li>
+      <li><b>Two clicks at a time</b>, on the same piece of track, and write it down.</li>
+    </ol>
+  </div>
+  <div class="read" style="max-width:56rem">
+    <div class="sheet" id="sheet"></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>The bike is modelled on a modern 450 cc motocross bike: about 300 mm of travel, coil fork springs and a linkage rear shock with a 5.4 kg/mm spring. The physics is a simplified half-bike running live in your browser. It's built for intuition, not for setting up a race bike.</p>
+  <span><a href="/">egod.space</a> · <a href="/explainers/">explainers</a> · 01 · <a href="/explainers/dirt-bike-suspension/">3D lab</a></span>
+</footer>
+
+<script>
+// <physics>
+// Half-bike model: sprung chassis (heave + pitch), two unsprung wheels on tyre springs,
+// and a rider standing on the pegs on a leg spring-damper. Horizontal speed is held constant.
+const Phys = (() => {
+  const G = 9.81;
+  const DEG = Math.PI / 180;
+  const RAKE = 27 * DEG;
+  const TAN_RAKE = Math.tan(RAKE);
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+  // Geometry in the chassis frame: metres, origin at the chassis centre of mass, x forward, y up.
+  const GEO = {
+    fAxleX: 0.80, fAxleY: -0.33,          // front axle with the fork fully extended
+    rAxleY: -0.35,                        // rear axle height, fully extended
+    pivotX: -0.10, pivotY: -0.15, arm: 0.585,
+    pegX: -0.12, pegY: -0.15,
+    Rf: 0.36, Rr: 0.345,
+    travelF: 0.29, travelR: 0.31,
+    rake: RAKE,
+  };
+  const MASS = { bike: 76, wheelF: 13, wheelR: 17 };
+
+  // Rear linkage: leverage ratio (wheel travel / shock travel) falls through the stroke,
+  // so the shock gets stiffer the deeper it goes.
+  const LR0 = 3.1, LR1 = 2.2;
+  const leverage = s => LR0 - (LR0 - LR1) * clamp(s / GEO.travelR, 0, 1);
+  function shockStroke(s) {
+    if (s <= 0) return s / LR0;
+    if (s >= GEO.travelR) return GEO.travelR / (LR0 - LR1) * Math.log(LR0 / LR1) + (s - GEO.travelR) / LR1;
+    return GEO.travelR / (LR0 - LR1) * Math.log(LR0 / leverage(s));
+  }
+  
+  // Clicks are counted out from fully closed: 0 = slowest/firmest, 20 = fastest/softest.
+  const CLICKS = 20;
+  const DAMP = { FC_LS: 600, FC_HS: 700, FR_LS: 1000, FR_HS: 1100, RC_LS: 3600, RC_HS: 5500, RR_LS: 7500, RR_HS: 6500 };
+  const clickMult = n => Math.exp((10 - n) * 0.16);
+
+  const STOCK = { rider: 78, spring: 5.4, preload: 11.5, comp: 10, reb: 10, speed: 40 };
+  const forkRateFor = shock => Math.round(0.45 * shock / 5.4 * 100) / 100; // kg/mm per fork spring
+
+  // Each end can have its own clickers (fComp/fReb on the fork; rComp/rHsc/rReb on the shock).
+  // Anything left out falls back to the shared comp/reb, which is all the one-page version uses.
+  function makeCfg(set, opts = {}) {
+    const mFC = clickMult(set.fComp ?? set.comp), mFR = clickMult(set.fReb ?? set.reb);
+    const mRC = clickMult(set.rComp ?? set.comp), mRR = clickMult(set.rReb ?? set.reb);
+    const mRH = clickMult(set.rHsc ?? set.rComp ?? set.comp);
+    const forkKgmm = set.forkSpring || forkRateFor(set.spring);
+    const stiff = opts.rigid ? 40 : 1, dstiff = opts.rigid ? 20 : 1;
+    return {
+      rider: set.rider,
+      speed: set.speed / 3.6,
+      shockK: set.spring * 9810 * stiff,       // N/m at the shock
+      forkK: 2 * forkKgmm * 9810 * stiff,       // N/m, both fork legs
+      preload: set.preload / 1000,
+      forkKgmm,
+      // Front damping at the wheel (N·s/m); rear damping at the shock shaft.
+      fC: { ls: DAMP.FC_LS * mFC * dstiff, hs: DAMP.FC_HS * mFC ** 0.75 * dstiff, knee: 0.30 },
+      fR: { ls: DAMP.FR_LS * mFR * dstiff, hs: DAMP.FR_HS * mFR * dstiff, knee: 0.30 },
+      // Shock compression: the low-speed clicker shapes slow, small movements; the high-speed
+      // adjuster takes over on fast, big hits (landings, square edges).
+      rC: { ls: DAMP.RC_LS * mRC * dstiff, hs: DAMP.RC_HS * mRC ** 0.3 * mRH ** 0.45 * dstiff, knee: 0.12 },
+      rR: { ls: DAMP.RR_LS * mRR * dstiff, hs: DAMP.RR_HS * mRR * dstiff, knee: 0.12 },
+      rigid: !!opts.rigid,
+    };
+  }
+
+  const damp = (v, d) => {
+    const a = Math.abs(v);
+    const f = a < d.knee ? d.ls * a : d.ls * d.knee + d.hs * (a - d.knee);
+    return v < 0 ? -f : f;
+  };
+
+  // Suspension force at the wheel (N, + pushes chassis up), for travel s and travel rate v (+ = compressing).
+  function forkForce(s, v, cfg) {
+    const T = GEO.travelF;
+    let F = cfg.forkK * (s + 0.006) + 1300 * s / Math.max(0.08, 1 - s / 0.36); // coil + trapped air
+    F += damp(v, v > 0 ? cfg.fC : cfg.fR);
+    if (s < 0) F += 90000 * s + 900 * v;                                   // top-out spring
+    const b0 = T - 0.03;
+    if (s > b0) { const d = s - b0; F += 1.2e6 * d * d + 1500 * v * (d / 0.03); } // bottoming cone
+    if (s > T) F += 2.5e6 * (s - T) + 4000 * v;                             // metal
+    return F;
+  }
+  function shockForce(s, v, cfg) {
+    const T = GEO.travelR;
+    const lr = leverage(s);
+    const vs = v / lr;
+    let Fs = cfg.shockK * (shockStroke(s) + cfg.preload);
+    Fs += damp(vs, v > 0 ? cfg.rC : cfg.rR);
+    let F = Fs / lr;
+    if (s < 0) F += 90000 * s + 900 * v;
+    const b0 = T - 0.03;
+    if (s > b0) { const d = s - b0; F += 1.2e6 * d * d + 1500 * v * (d / 0.03); }
+    if (s > T) F += 2.5e6 * (s - T) + 4000 * v;
+    return F;
+  }
+  // Spring-only force, used for sag maths and the force-vs-travel chart.
+  const forkSpring = (s, cfg) => cfg.forkK * (s + 0.006) + 1300 * s / Math.max(0.08, 1 - s / 0.36);
+  const shockSpring = (s, cfg) => cfg.shockK * (shockStroke(s) + cfg.preload) / leverage(s);
+
+  // Static sag on flat ground. Returns wheel travel in metres at each end.
+  function sag(cfg, riderKg) {
+    const ax = 0.775, rx = -0.675; // front/rear axle x near sag
+    const wb = ax - rx;
+    const W = MASS.bike * G, Wr = riderKg * G;
+    const loadF = W * (-rx) / wb + Wr * (GEO.pegX - rx) / wb;
+    const loadR = W * ax / wb + Wr * (ax - GEO.pegX) / wb;
+    const solve = (fn, load, T) => {
+      if (fn(0) >= load) return 0;
+      let lo = 0, hi = T + 0.02;
+      for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fn(m) < load) lo = m; else hi = m; }
+      return (lo + hi) / 2;
+    };
+    return {
+      front: solve(s => forkSpring(s, cfg), loadF, GEO.travelF),
+      rear: solve(s => shockSpring(s, cfg), loadR, GEO.travelR),
+      loadF, loadR,
+    };
+  }
+
+  // ---------- Terrain ----------
+  const DX = 0.05;
+  function TrackBuilder() {
+    const ys = [0]; const tags = [];
+    let y = 0;
+    const len = () => (ys.length - 1) * DX;
+    const push = fn => (L) => { const n = Math.max(1, Math.round(L / DX)); const y0 = y; for (let i = 1; i <= n; i++) ys.push(fn(i / n, y0, i * DX)); y = ys[ys.length - 1]; };
+    const api = {
+      flat(L) { push(() => y)(L); return api; },
+      slope(L, dy) { push((t, y0) => y0 + dy * (1 - Math.cos(Math.PI * t)) / 2)(L); return api; },
+      line(L, dy) { push((t, y0) => y0 + dy * t)(L); return api; },
+      whoops(n, spacing, h) {
+        const x0 = len();
+        for (let k = 0; k < n; k++) push((t, y0) => y0 + h * (1 - Math.cos(2 * Math.PI * t)) / 2 * (1 - 0.15 * Math.sin(2 * Math.PI * t)))(spacing);
+        tags.push({ x0, x1: len(), tag: 'whoops' });
+        return api;
+      },
+      chop(L, seed, hMin, hMax) {
+        const x0 = len(); let r = seed;
+        const rnd = () => ((r = (r * 16807) % 2147483647) / 2147483647);
+        let used = 0;
+        while (used < L - 1.2) {
+          const gap = 0.35 + rnd() * 0.9, w = 0.22 + rnd() * 0.35, h = hMin + rnd() * (hMax - hMin);
+          push(() => y)(gap);
+          const e = 0.12; // edge width
+          push((t, y0, d) => { const xx = t * w; const k = Math.min(1, xx / e, (w - xx) / e); return y0 + h * Math.sin(Math.PI / 2 * Math.max(0, k)); })(w);
+          used += gap + w;
+        }
+        push(() => y)(L - used);
+        tags.push({ x0, x1: len(), tag: 'chop' });
+        return api;
+      },
+      kicker(H, angleDeg) {
+        const L = 2 * H / Math.tan(angleDeg * DEG);
+        push((t, y0) => y0 + H * t * t)(L);
+        tags.push({ x0: len(), x1: len(), tag: 'lip' });
+        return api;
+      },
+      tag(name, x0, x1) { tags.push({ x0, x1, tag: name }); return api; },
+      at() { return len(); },
+      y() { return y; },
+      build(name) {
+        if (Math.abs(y) > 1e-6) api.slope(4, -y);
+        const H = Float32Array.from(ys);
+        return { name, H, P: len(), tags };
+      },
+    };
+    return api;
+  }
+
+  function terrain(track, x) {
+    const P = track.P;
+    let u = x % P; if (u < 0) u += P;
+    const f = u / DX, i = f | 0, t = f - i;
+    const H = track.H;
+    return H[i] + (H[i + 1 === H.length ? 0 : i + 1] - H[i]) * t;
+  }
+  function slopeAt(track, x) { return (terrain(track, x + 0.25) - terrain(track, x - 0.25)) / 0.5; }
+  function tagAt(track, x) {
+    let u = x % track.P; if (u < 0) u += track.P;
+    for (const g of track.tags) if (u >= g.x0 && u <= g.x1) return g.tag;
+    return null;
+  }
+
+  const TRACKS = {};
+  {
+    const t = TrackBuilder();
+    t.flat(12).slope(14, 1.3).flat(5).slope(12, -1.3).flat(6);
+    t.whoops(4, 3.4, 0.26).flat(8);
+    t.chop(12, 7, 0.025, 0.06).flat(10);
+    const lip = t.at() + 2 * 0.45 / Math.tan(17 * DEG);
+    t.kicker(0.45, 17).line(0.6, -0.15).flat(2.0).slope(5.5, -0.30).flat(12);
+    t.tag('air', lip, lip + 9);
+    t.slope(10, 0.8).slope(10, -0.8).flat(8);
+    TRACKS.trail = t.build('trail');
+  }
+  {
+    const t = TrackBuilder();
+    t.flat(22).whoops(14, 3.6, 0.30).flat(24);
+    TRACKS.whoops = t.build('whoops');
+  }
+  {
+    const t = TrackBuilder();
+    t.flat(16).chop(48, 11, 0.03, 0.075).flat(14);
+    TRACKS.chop = t.build('chop');
+  }
+  {
+    const t = TrackBuilder();
+    t.flat(24);
+    const H = 0.85, ang = 19;
+    t.kicker(H, ang);
+    const lip = t.at();
+    t.line(0.9, -H).flat(30);
+    t.tag('air', lip, lip + 7.5);
+    t.tag('landing', lip, lip + 14);
+    TRACKS.jump = t.build('jump');
+  }
+  {
+    const t = TrackBuilder();
+    t.flat(60);
+    TRACKS.flat = t.build('flat');
+  }
+  {
+    const t = TrackBuilder();
+    t.flat(10).chop(30, 3, 0.05, 0.11).flat(4).whoops(3, 3.2, 0.22).flat(6).chop(20, 5, 0.05, 0.10).flat(8);
+    TRACKS.bumps = t.build('bumps');
+  }
+
+  // ---------- Simulation ----------
+  function Sim(track, set, opts = {}) {
+    const sim = {
+      track, set: { ...set }, opts, cfg: makeCfg(set, opts),
+      t: 0, x: opts.x0 || 0,
+      y: 0, vy: 0, th: 0, om: 0,
+      yf: 0, vyf: 0, yr: 0, vyr: 0,
+      yR: 0, vyR: 0,
+      sf: 0, sr: 0, vsf: 0, vsr: 0, lc: 0,
+      xf: 0, xr: 0, axf: GEO.fAxleX, axr: -0.65,
+      loadF: 0, loadR: 0, reqF: null, reqR: null,
+      spin: 0, accB: 0, events: [], airborne: false, airT: 0, thTarget: 0,
+      riderOn: opts.riderOn !== false,
+      stats: null,
+    };
+    sim.setSettings = (s) => {
+      sim.set = { ...sim.set, ...s }; sim.cfg = makeCfg(sim.set, sim.opts);
+      sim.sagFrac = sag(sim.cfg, sim.riderOn ? sim.set.rider : 0).rear / GEO.travelR;
+    };
+    sim.reset = (dropHeight = 0) => {
+      const sg = sag(sim.cfg, sim.riderOn ? sim.set.rider : 0);
+      const g0 = terrain(track, sim.x);
+      sim.th = 0; sim.om = 0;
+      sim.yf = g0 + GEO.Rf - 0.004 + dropHeight;
+      sim.yr = g0 + GEO.Rr - 0.005 + dropHeight;
+      sim.sf = sg.front; sim.sr = sg.rear;
+      sim.y = sim.yf - GEO.fAxleY - sg.front;
+      sim.vy = sim.vyf = sim.vyr = 0;
+      sim.lc = sim.riderOn ? G / legOmega2() : 0;
+      sim.yR = sim.y + GEO.pegY + RIDER_H0 - sim.lc;
+      sim.vyR = 0;
+      sim.reqF = sim.reqR = null;
+      newStats();
+      if (!dropHeight) sim.settle(1.2);
+      sim.events.length = 0;
+      newStats();
+    };
+    sim.settle = (seconds) => {
+      const st = sim.opts.static; sim.opts.static = true;
+      const n = Math.round(seconds * 2000);
+      for (let i = 0; i < n; i++) sim.step(1 / 2000);
+      sim.opts.static = st;
+    };
+    const RIDER_H0 = 0.62;
+    const legOmega2 = () => (2 * Math.PI * 1.7) ** 2;
+
+    function newStats() {
+      sim.stats = {
+        lap: Math.floor(sim.x / track.P), t: 0, n: 0,
+        bottomF: 0, bottomR: 0, maxF: 0, maxR: 0,
+        gripN: 0, gripF: 0, gripR: 0,
+        bacc2: 0, baccPeak: 0,
+        whoopsN: 0, whoopsR: 0, whoopsF: 0,
+        skips: 0, kick: 0,
+        hitArm: 0, hitMin: 1, over: 0, hits: 0,
+      };
+    }
+    sim.newStats = newStats;
+    let bottomedF = false, bottomedR = false, offF = 0, offR = 0, prevVy = 0;
+
+    function contact(xw, R) {
+      // highest point the wheel centre must sit at to clear the ground under its footprint
+      let req = -1e9;
+      for (let k = -5; k <= 5; k++) {
+        const dx = R * k / 5.5;
+        const h = terrain(track, xw + dx) + Math.sqrt(R * R - dx * dx);
+        if (h > req) req = h;
+      }
+      return req;
+    }
+
+    sim.step = (dt) => {
+      const cfg = sim.cfg;
+      const v = sim.opts.static ? 0 : cfg.speed;
+      const c = Math.cos(sim.th), s = Math.sin(sim.th);
+      const cc = Math.max(0.5, c);
+
+      // Front: axle slides up the raked fork, so it moves back as the fork compresses.
+      const fy = GEO.fAxleY;
+      const axf = GEO.fAxleX - sim.sf * TAN_RAKE;
+      const attF = sim.y + axf * s + fy * c;
+      const sf = (sim.yf - attF) / cc;
+      const vsf = (sim.vyf - (sim.vy + (axf * c - fy * s) * sim.om)) / cc;
+      // Rear: axle swings on the swingarm.
+      const ry = GEO.rAxleY + sim.sr;
+      const dyp = clamp(ry - GEO.pivotY, -GEO.arm * 0.95, GEO.arm * 0.95);
+      const axr = GEO.pivotX - Math.sqrt(GEO.arm * GEO.arm - dyp * dyp);
+      const ry0 = GEO.rAxleY;
+      const attR = sim.y + axr * s + ry0 * c;
+      const sr = (sim.yr - attR) / cc;
+      const vsr = (sim.vyr - (sim.vy + (axr * c - ry0 * s) * sim.om)) / cc;
+      sim.sf = sf; sim.sr = sr; sim.vsf = vsf; sim.vsr = vsr; sim.axf = axf; sim.axr = axr;
+
+      const Ff = forkForce(sf, vsf, cfg);
+      const Fr = shockForce(sr, vsr, cfg);
+
+      // Tyres
+      sim.xf = sim.x + axf * c - (fy + sf) * s;
+      sim.xr = sim.x + axr * c - ry * s;
+      const reqF = contact(sim.xf, GEO.Rf), reqR = contact(sim.xr, GEO.Rr);
+      const dReqF = sim.reqF === null ? 0 : (reqF - sim.reqF) / dt;
+      const dReqR = sim.reqR === null ? 0 : (reqR - sim.reqR) / dt;
+      sim.reqF = reqF; sim.reqR = reqR;
+      const penF = reqF - sim.yf, penR = reqR - sim.yr;
+      let Tf = 0, Tr = 0;
+      if (penF > 0) Tf = Math.max(0, 115000 * penF + 260 * (dReqF - sim.vyf) + 4e6 * Math.max(0, penF - 0.06) ** 2 * 50);
+      if (penR > 0) Tr = Math.max(0, 125000 * penR + 280 * (dReqR - sim.vyr) + 4e6 * Math.max(0, penR - 0.06) ** 2 * 50);
+      sim.loadF = Tf; sim.loadR = Tr;
+
+      // Rider legs
+      let Fleg = 0;
+      const mr = sim.riderOn ? cfg.rider : 0;
+      const pegW = sim.y + GEO.pegX * s + GEO.pegY * c;
+      const vPeg = sim.vy + (GEO.pegX * c - GEO.pegY * s) * sim.om;
+      if (mr > 0) {
+        const k = mr * legOmega2(), cd = 2 * 0.9 * Math.sqrt(k * mr);
+        const lc = pegW + RIDER_H0 - sim.yR;
+        const vlc = vPeg - sim.vyR;
+        Fleg = k * lc + cd * vlc;
+        if (lc > 0.24) Fleg += 4e5 * (lc - 0.24) + 3000 * vlc;
+        if (lc < -0.03) Fleg += 4e5 * (lc + 0.03) + 3000 * vlc;
+        sim.lc = lc;
+      }
+
+      // Airborne attitude control: the rider levels the bike to the landing.
+      const inAir = Tf === 0 && Tr === 0;
+      let tau = 0;
+      if (inAir) {
+        sim.airT += dt;
+        if (sim.airT > 0.08) {
+          const I = 22 + mr * 0.35;
+          const kp = I * (2 * Math.PI * 1.1) ** 2, kd = 2 * 0.8 * Math.sqrt(kp * I);
+          tau = -kp * (sim.th - sim.thTarget) - kd * sim.om;
+        }
+      } else sim.airT = 0;
+      sim.airborne = inAir;
+
+      const ms = MASS.bike;
+      const I = 22 + mr * 0.35;
+      const ay = ((Ff + Fr) * c - Fleg - ms * G) / ms;
+      const al = (Ff * axf + Fr * axr - Fleg * (GEO.pegX * c - GEO.pegY * s) + tau) / I;
+      const ayf = (-Ff * c + Tf - MASS.wheelF * G) / MASS.wheelF;
+      const ayr = (-Fr * c + Tr - MASS.wheelR * G) / MASS.wheelR;
+      const ayR = mr > 0 ? (Fleg - mr * G) / mr : 0;
+
+      sim.vy += ay * dt; sim.om += al * dt;
+      sim.vyf += ayf * dt; sim.vyr += ayr * dt;
+      sim.y += sim.vy * dt; sim.th += sim.om * dt;
+      sim.yf += sim.vyf * dt; sim.yr += sim.vyr * dt;
+      if (mr > 0) { sim.vyR += ayR * dt; sim.yR += sim.vyR * dt; }
+      else { sim.yR = pegW + RIDER_H0; sim.vyR = vPeg; }
+      sim.x += v * dt;
+      sim.spin += v * dt;
+      sim.t += dt;
+
+      // ---- events + stats ----
+      // What the rider feels through the bars: chassis acceleration, lightly smoothed.
+      sim.accB += ((sim.vy - prevVy) / dt - sim.accB) * Math.min(1, dt / 0.012);
+      prevVy = sim.vy;
+      const st = sim.stats;
+      const fF = sf / GEO.travelF, fR = sr / GEO.travelR;
+      const tag = tagAt(track, sim.x);
+      if (fF > 0.985 && !bottomedF) { bottomedF = true; st.bottomF++; sim.events.push({ type: 'bottom', end: 'front', t: sim.t }); }
+      if (fF < 0.9) bottomedF = false;
+      if (fR > 0.985 && !bottomedR) { bottomedR = true; st.bottomR++; sim.events.push({ type: 'bottom', end: 'rear', t: sim.t }); }
+      if (fR < 0.9) bottomedR = false;
+      st.maxF = Math.max(st.maxF, fF); st.maxR = Math.max(st.maxR, fR);
+      st.t += dt; st.n++;
+      if (tag !== 'air') {
+        st.gripN++;
+        if (Tf > 0.3 * 700) st.gripF++;
+        if (Tr > 0.3 * 900) st.gripR++;
+        const pF = offF, pR = offR;
+        offF = Tf === 0 ? offF + dt : 0;
+        offR = Tr === 0 ? offR + dt : 0;
+        if (pF < 0.06 && offF >= 0.06) st.skips++;
+        if (pR < 0.06 && offR >= 0.06) st.skips++;
+        const ab = sim.accB;
+        st.bacc2 += ab * ab; st.baccPeak = Math.max(st.baccPeak, Math.abs(ab));
+      }
+      if (tag === 'whoops') { st.whoopsN++; st.whoopsR += fR; st.whoopsF += fF; }
+      // After a big hit: how far past its sag point does the rear spring back (kick), and how long until it recovers?
+      if (fR > 0.6) { st.hitArm = 0.7; st.hitMin = 1; }
+      else if (st.hitArm > 0) {
+        st.hitArm -= dt;
+        st.hitMin = Math.min(st.hitMin, fR);
+        if (inAir) st.hitArm = 0;
+        else if (st.hitArm <= 0) {
+          const sg = sim.sagFrac || 0.33;
+          const over = (sg - st.hitMin) / sg;
+          st.over = Math.max(st.over, over); st.hits++;
+          if (over > 0.8) { st.kick++; sim.events.push({ type: 'kick', end: 'rear', t: sim.t }); }
+        }
+      }
+      return sim;
+    };
+
+    sim.summary = () => {
+      const st = sim.stats;
+      return {
+        t: st.t, bottoms: st.bottomF + st.bottomR, bottomF: st.bottomF, bottomR: st.bottomR,
+        maxF: st.maxF, maxR: st.maxR,
+        grip: st.gripN ? (st.gripF + st.gripR) / (2 * st.gripN) : 1,
+        jolt: st.baccPeak / G, vib: st.gripN ? Math.sqrt(st.bacc2 / st.gripN) / G : 0,
+        packR: st.whoopsN > 200 ? st.whoopsR / st.whoopsN : null,
+        kicks: st.kick, over: st.over, hits: st.hits, skips: st.skips,
+      };
+    };
+
+    // Predict where the bike lands and pick the attitude to meet it.
+    sim.plan = () => {
+      if (!sim.airborne) { sim.thTarget = 0; return; }
+      const v = sim.cfg.speed;
+      let tt = 0, yy = sim.y, vv = sim.vy;
+      for (let i = 0; i < 150; i++) {
+        tt += 0.02; vv -= G * 0.02; yy += vv * 0.02;
+        const xg = sim.x + v * tt;
+        if (vv < 0 && yy - 0.62 <= terrain(track, xg)) {
+          sim.thTarget = Math.atan(slopeAt(track, xg)) + 1.5 * DEG;
+          return;
+        }
+      }
+      sim.thTarget = 1.5 * DEG;
+    };
+
+    sim.sagFrac = sag(sim.cfg, sim.riderOn ? sim.set.rider : 0).rear / GEO.travelR;
+    sim.reset(opts.drop || 0);
+    return sim;
+  }
+
+  return { G, GEO, MASS, STOCK, CLICKS, TRACKS, Sim, makeCfg, sag, forkSpring, shockSpring, leverage, shockStroke, terrain, slopeAt, tagAt, forkRateFor, clickMult };
+})();
+// </physics>
+</script>
+<script>
+(() => {
+  'use strict';
+  const P = Phys, GEO = P.GEO, STOCK = P.STOCK;
+  const TAU = Math.PI * 2, DEG = Math.PI / 180;
+  const $ = (s) => document.querySelector(s);
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue('--' + n).trim();
+  const COL = {
+    gold: tok('gold'), blue: tok('blue'), bad: tok('bad'), warn: tok('warn'), good: tok('good'),
+    text: tok('text'), dim: tok('dim'), faint: tok('faint'), ink: tok('ink'), panel: tok('panel'), clay: tok('clay'),
+    plastic: '#e9e2d3', plasticShade: '#c9c1b0', graphic: '#26272b', frame: '#a3a8ae', metal: '#7f858c',
+    dark: '#1b1c1f', rubber: '#141414', knob: '#232323', seat: '#16171a',
+    jersey: '#3d414a', pants: '#25272c',
+  };
+  const FONT_DATA = getComputedStyle(document.body).getPropertyValue('--data') || 'monospace';
+  const mm = (m) => Math.round(m * 1000);
+
+  // ---------------------------------------------------------------- canvas helpers
+  function fit(cv) {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const r = cv.getBoundingClientRect();
+    const w = Math.max(2, Math.round(r.width * dpr)), h = Math.max(2, Math.round(r.height * dpr));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    return { W: w, H: h, dpr };
+  }
+  function worldTransform(ctx, cam, W, H) {
+    // world metres, y up -> device pixels
+    ctx.setTransform(cam.scale, 0, 0, -cam.scale, W * cam.ax - cam.x * cam.scale, H * cam.ay + cam.y * cam.scale);
+  }
+  const toScreen = (cam, W, H, x, y) => [W * cam.ax + (x - cam.x) * cam.scale, H * cam.ay - (y - cam.y) * cam.scale];
+  function poly(ctx, pts) {
+    ctx.beginPath(); ctx.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
+    ctx.closePath();
+  }
+  function seg(ctx, x1, y1, x2, y2, w, color) {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.lineWidth = w; ctx.strokeStyle = color; ctx.stroke();
+  }
+  function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); }
+  function coil(ctx, x1, y1, x2, y2, turns, width, color, lw) {
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1e-6;
+    const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    const n = turns * 2;
+    for (let i = 1; i < n; i++) {
+      const t = i / n, side = (i % 2 ? 1 : -1) * width / 2;
+      ctx.lineTo(x1 + dx * t + nx * side, y1 + dy * t + ny * side);
+    }
+    ctx.lineTo(x2, y2);
+    ctx.lineWidth = lw; ctx.strokeStyle = color; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+  function ik(ax, ay, bx, by, l1, l2, bend) {
+    // two-bone IK: joint between (ax,ay) and (bx,by); bend = +1 / -1 picks the side
+    const dx = bx - ax, dy = by - ay; let d = Math.hypot(dx, dy);
+    d = Math.min(d, l1 + l2 - 1e-4);
+    const a = Math.acos(clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1));
+    const base = Math.atan2(dy, dx) + bend * a;
+    return [ax + Math.cos(base) * l1, ay + Math.sin(base) * l1];
+  }
+
+  // ---------------------------------------------------------------- scenery
+  function ridge(u, seed, oct) {
+    let h = 0, amp = 1, f = 1;
+    for (let i = 0; i < oct; i++) { h += amp * Math.sin(u * f + seed * (i + 1) * 1.7) * 0.5 + amp * 0.5 * Math.sin(u * f * 2.13 + seed * 3.1 + i); amp *= 0.5; f *= 2.1; }
+    return h;
+  }
+  function drawSky(ctx, W, H, cam, hz, oy = 0) {
+    ctx.setTransform(1, 0, 0, 1, 0, oy);
+    const horizon = H * hz;
+    const g = ctx.createLinearGradient(0, 0, 0, horizon + H * 0.1);
+    g.addColorStop(0, '#0b0f1a'); g.addColorStop(0.45, '#1f1d2a'); g.addColorStop(0.8, '#5b3a2b'); g.addColorStop(1, '#9a5d35');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // low sun
+    const sx = W * 0.76, sy = horizon - H * 0.035, sr = Math.max(18, H * 0.07);
+    const glow = ctx.createRadialGradient(sx, sy, sr * 0.2, sx, sy, sr * 7);
+    glow.addColorStop(0, 'rgba(255,196,128,0.55)'); glow.addColorStop(0.25, 'rgba(240,140,80,0.18)'); glow.addColorStop(1, 'rgba(240,140,80,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ffd9a6'; circle(ctx, sx, sy, sr); ctx.fill();
+    // distant ranges, parallax
+    const layers = [
+      { p: 0.05, base: horizon - H * 0.02, amp: H * 0.12, col: '#2a2433', seed: 1.3, f: 0.0016 },
+      { p: 0.14, base: horizon + H * 0.03, amp: H * 0.09, col: '#1d1a1f', seed: 4.1, f: 0.0028 },
+      { p: 0.32, base: horizon + H * 0.08, amp: H * 0.06, col: '#151312', seed: 7.7, f: 0.0045 },
+    ];
+    const pxPerM = cam.scale;
+    for (const L of layers) {
+      ctx.beginPath(); ctx.moveTo(0, H);
+      const off = cam.x * pxPerM * L.p;
+      for (let x = 0; x <= W + 8; x += 8) {
+        const u = (x + off) * L.f / (pxPerM / 60);
+        ctx.lineTo(x, L.base - (ridge(u, L.seed, 3) * 0.5 + 0.5) * L.amp);
+      }
+      ctx.lineTo(W, H); ctx.closePath(); ctx.fillStyle = L.col; ctx.fill();
+    }
+    // haze
+    const hz2 = ctx.createLinearGradient(0, horizon - H * 0.1, 0, horizon + H * 0.15);
+    hz2.addColorStop(0, 'rgba(160,100,70,0)'); hz2.addColorStop(1, 'rgba(160,100,70,0.12)');
+    ctx.fillStyle = hz2; ctx.fillRect(0, horizon - H * 0.1, W, H * 0.25);
+  }
+  const hash = (i) => { const s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+  function drawGround(ctx, track, cam, W, H) {
+    const x0 = cam.x - (W * cam.ax) / cam.scale - 1, x1 = cam.x + (W * (1 - cam.ax)) / cam.scale + 1;
+    const yBottom = cam.y - (H * (1 - cam.ay)) / cam.scale - 2;
+    const step = Math.max(0.04, 3 / cam.scale);
+    ctx.beginPath(); ctx.moveTo(x0, yBottom);
+    for (let x = x0; x <= x1; x += step) ctx.lineTo(x, P.terrain(track, x));
+    ctx.lineTo(x1, P.terrain(track, x1)); ctx.lineTo(x1, yBottom); ctx.closePath();
+    const yTop = cam.y + 1;
+    const g = ctx.createLinearGradient(0, yTop, 0, yBottom);
+    g.addColorStop(0, '#4a3122'); g.addColorStop(0.35, '#2a1c14'); g.addColorStop(1, '#100c09');
+    ctx.fillStyle = g; ctx.fill();
+    // strata following the surface
+    ctx.lineWidth = 1.2 / cam.scale;
+    for (const [d, a] of [[0.18, 0.10], [0.45, 0.07], [0.9, 0.05]]) {
+      ctx.beginPath();
+      for (let x = x0; x <= x1; x += step * 2) { const y = P.terrain(track, x) - d - 0.04 * Math.sin(x * 1.3 + d * 9); if (x === x0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.strokeStyle = `rgba(214,160,110,${a})`; ctx.stroke();
+    }
+    // pebbles
+    ctx.fillStyle = 'rgba(190,140,100,0.35)';
+    for (let i = Math.floor(x0 / 0.23); i <= x1 / 0.23; i++) {
+      const r = hash(i); if (r < 0.55) continue;
+      const x = i * 0.23 + hash(i + 7) * 0.2, y = P.terrain(track, x) - 0.03 - hash(i + 3) * 0.25;
+      ctx.beginPath(); ctx.ellipse(x, y, 0.012 + r * 0.02, 0.008 + r * 0.01, 0, 0, TAU); ctx.fill();
+    }
+    // rim light on the surface
+    ctx.beginPath();
+    for (let x = x0; x <= x1; x += step) { const y = P.terrain(track, x); if (x === x0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+    ctx.lineWidth = 2.2 / cam.scale; ctx.strokeStyle = 'rgba(232,160,100,0.75)'; ctx.stroke();
+  }
+
+  // ---------------------------------------------------------------- the bike
+  const RK = GEO.rake, DX = Math.sin(RK), DY = -Math.cos(RK);
+  const FORK_LEN = 0.86;
+  const TOP = [GEO.fAxleX - FORK_LEN * DX, GEO.fAxleY - FORK_LEN * DY];
+  const CLAMP_LO = [TOP[0] + 0.15 * DX, TOP[1] + 0.15 * DY];
+  const OUTER_END = [TOP[0] + 0.5 * DX, TOP[1] + 0.5 * DY];
+  const SHOCK_TOP = [-0.05, 0.17], SHOCK_AIM = [-0.12, -0.27], SHOCK_LEN = 0.46;
+  const SHOCK_FULL = P.shockStroke(GEO.travelR);
+  const BARS = [0.345, 0.535];
+  const PEG = [GEO.pegX, GEO.pegY];
+
+  function wheel(ctx, x, y, R, rimR, discR, rot) {
+    ctx.fillStyle = COL.rubber; circle(ctx, x, y, R); ctx.fill();
+    ctx.fillStyle = COL.knob;
+    const n = 30;
+    for (let i = 0; i < n; i++) {
+      const a = rot + (i * TAU) / n;
+      ctx.save(); ctx.translate(x + Math.cos(a) * (R - 0.004), y + Math.sin(a) * (R - 0.004)); ctx.rotate(a);
+      ctx.fillRect(-0.014, -0.017, 0.022, 0.034); ctx.restore();
+    }
+    ctx.lineWidth = 0.016; ctx.strokeStyle = '#262626'; circle(ctx, x, y, R - 0.045); ctx.stroke();
+    ctx.lineWidth = 0.022; ctx.strokeStyle = COL.metal; circle(ctx, x, y, rimR); ctx.stroke();
+    ctx.lineWidth = 0.006; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; circle(ctx, x, y, rimR + 0.008); ctx.stroke();
+    ctx.lineWidth = 0.0045; ctx.strokeStyle = 'rgba(205,205,205,0.45)';
+    ctx.beginPath();
+    for (let i = 0; i < 18; i++) {
+      const a = rot + (i * TAU) / 18, b = a + (i % 2 ? 0.35 : -0.35);
+      ctx.moveTo(x + Math.cos(a) * 0.04, y + Math.sin(a) * 0.04); ctx.lineTo(x + Math.cos(b) * (rimR - 0.01), y + Math.sin(b) * (rimR - 0.01));
+    }
+    ctx.stroke();
+    ctx.lineWidth = 0.014; ctx.strokeStyle = '#9b9b9b'; circle(ctx, x, y, discR); ctx.stroke();
+    ctx.fillStyle = '#2a2a2a'; circle(ctx, x, y, 0.05); ctx.fill();
+    ctx.fillStyle = '#c4c4c4'; circle(ctx, x, y, 0.016); ctx.fill();
+  }
+
+  function riderPose(sim) {
+    const lc = sim.riderOn ? sim.lc : 0.09;
+    const hip = [-0.2 - lc * 0.3, PEG[1] + 0.58 - lc];
+    const ankle = [PEG[0] - 0.02, PEG[1] + 0.07];
+    const knee = ik(hip[0], hip[1], ankle[0], ankle[1], 0.45, 0.45, 1);
+    const shoulder = [hip[0] + 0.3 + lc * 0.2, hip[1] + 0.36 - lc * 0.15];
+    const head = [shoulder[0] + 0.09, shoulder[1] + 0.15];
+    const elbow = ik(shoulder[0], shoulder[1], BARS[0] - 0.02, BARS[1], 0.3, 0.3, -1);
+    return { hip, ankle, knee, shoulder, head, elbow };
+  }
+
+  function drawBike(ctx, sim, look = {}) {
+    const xray = !!look.xray;
+    const c = Math.cos(sim.th);
+    ctx.save();
+    ctx.translate(sim.x, sim.y); ctx.rotate(sim.th);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const sf = clamp(sim.sf, -0.01, GEO.travelF + 0.01), sr = clamp(sim.sr, -0.01, GEO.travelR + 0.01);
+    const fa = [GEO.fAxleX - sf * Math.tan(RK), GEO.fAxleY + sf];
+    const ry = GEO.rAxleY + sr, dyp = ry - GEO.pivotY;
+    const ra = [GEO.pivotX - Math.sqrt(GEO.arm * GEO.arm - dyp * dyp), ry];
+    const rotF = -sim.spin / GEO.Rf - sim.th, rotR = -sim.spin / GEO.Rr - sim.th;
+
+    // wheels
+    wheel(ctx, ra[0], ra[1], GEO.Rr, 0.245, 0.11, rotR);
+    wheel(ctx, fa[0], fa[1], GEO.Rf, 0.268, 0.13, rotF);
+
+    // chain + sprockets
+    const cs = [0.04, -0.17];
+    ctx.strokeStyle = '#3a3836'; ctx.lineWidth = 0.012;
+    ctx.beginPath(); ctx.moveTo(cs[0], cs[1] + 0.04); ctx.lineTo(ra[0], ra[1] + 0.11); ctx.moveTo(cs[0], cs[1] - 0.04); ctx.lineTo(ra[0], ra[1] - 0.11); ctx.stroke();
+    ctx.lineWidth = 0.01; ctx.strokeStyle = '#6a625a'; circle(ctx, ra[0], ra[1], 0.105); ctx.stroke();
+
+    // swingarm
+    const ang = Math.atan2(ra[1] - GEO.pivotY, ra[0] - GEO.pivotX);
+    const nx = -Math.sin(ang), ny = Math.cos(ang);
+    poly(ctx, [GEO.pivotX + nx * 0.04, GEO.pivotY + ny * 0.04, ra[0] + nx * 0.028, ra[1] + ny * 0.028, ra[0] - nx * 0.03, ra[1] - ny * 0.03, GEO.pivotX - nx * 0.045, GEO.pivotY - ny * 0.045]);
+    ctx.fillStyle = COL.frame; ctx.fill();
+    ctx.lineWidth = 0.006; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.stroke();
+    ctx.fillStyle = '#2a2a2a'; circle(ctx, GEO.pivotX, GEO.pivotY, 0.025); ctx.fill();
+
+    // rear shock + linkage
+    const stroke = clamp(P.shockStroke(clamp(sr, 0, GEO.travelR)), 0, SHOCK_FULL);
+    const sd = [SHOCK_AIM[0] - SHOCK_TOP[0], SHOCK_AIM[1] - SHOCK_TOP[1]]; const sl = Math.hypot(sd[0], sd[1]); sd[0] /= sl; sd[1] /= sl;
+    const L = SHOCK_LEN - stroke;
+    const sb = [SHOCK_TOP[0] + sd[0] * L, SHOCK_TOP[1] + sd[1] * L];
+    const armPt = [GEO.pivotX + Math.cos(ang) * 0.17 + nx * -0.06, GEO.pivotY + Math.sin(ang) * 0.17 + ny * -0.06];
+    seg(ctx, sb[0], sb[1], armPt[0], armPt[1], 0.03, '#3b3d41');
+    seg(ctx, sb[0], sb[1], 0.0, -0.31, 0.022, '#3b3d41');
+    // reservoir + body
+    const bodyEnd = [SHOCK_TOP[0] + sd[0] * 0.2, SHOCK_TOP[1] + sd[1] * 0.2];
+    seg(ctx, SHOCK_TOP[0] - 0.05, SHOCK_TOP[1] - 0.01, SHOCK_TOP[0] - 0.06, SHOCK_TOP[1] - 0.17, 0.045, '#2d2f33');
+    seg(ctx, SHOCK_TOP[0], SHOCK_TOP[1], bodyEnd[0], bodyEnd[1], 0.05, '#2f3136');
+    seg(ctx, bodyEnd[0], bodyEnd[1], sb[0], sb[1], 0.016, '#d8d2c4'); // shaft
+    // spring between the collars
+    const collarTop = [SHOCK_TOP[0] + sd[0] * 0.05, SHOCK_TOP[1] + sd[1] * 0.05];
+    const collarBot = [sb[0] - sd[0] * 0.035, sb[1] - sd[1] * 0.035];
+    coil(ctx, collarTop[0], collarTop[1], collarBot[0], collarBot[1], 8, 0.085, COL.blue, 0.016);
+    seg(ctx, collarBot[0] - sd[1] * 0.05, collarBot[1] + sd[0] * 0.05, collarBot[0] + sd[1] * 0.05, collarBot[1] - sd[0] * 0.05, 0.016, '#4a4d52');
+    ctx.fillStyle = '#9da3aa'; circle(ctx, sb[0], sb[1], 0.016); ctx.fill();
+
+    // frame
+    ctx.strokeStyle = COL.frame;
+    ctx.lineWidth = 0.05; ctx.beginPath(); ctx.moveTo(0.45, 0.36); ctx.lineTo(0.17, 0.25); ctx.lineTo(0.0, 0.12); ctx.lineTo(-0.07, -0.02); ctx.lineTo(GEO.pivotX, GEO.pivotY); ctx.stroke();
+    ctx.lineWidth = 0.032; ctx.beginPath(); ctx.moveTo(0.47, 0.28); ctx.lineTo(0.38, 0.05); ctx.lineTo(0.34, -0.18); ctx.lineTo(0.26, -0.31); ctx.lineTo(0.02, -0.33); ctx.lineTo(-0.08, -0.22); ctx.stroke();
+    ctx.lineWidth = 0.024; ctx.beginPath(); ctx.moveTo(0.02, 0.21); ctx.lineTo(-0.6, 0.3); ctx.moveTo(-0.07, 0.0); ctx.lineTo(-0.42, 0.24); ctx.stroke();
+
+    // engine
+    poly(ctx, [0.02, -0.3, 0.3, -0.3, 0.36, -0.14, 0.31, -0.02, 0.06, -0.02, -0.04, -0.12]);
+    ctx.fillStyle = '#2a2b2e'; ctx.fill();
+    poly(ctx, [0.12, -0.04, 0.3, -0.04, 0.34, 0.12, 0.16, 0.14]); ctx.fillStyle = '#34363a'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 0.006; ctx.beginPath();
+    for (let i = 0; i < 5; i++) { const t = i / 5; ctx.moveTo(0.13 + 0.03 * t, -0.02 + 0.16 * t); ctx.lineTo(0.31 + 0.03 * t, -0.02 + 0.15 * t); }
+    ctx.stroke();
+    poly(ctx, [0.15, 0.12, 0.35, 0.1, 0.37, 0.2, 0.18, 0.22]); ctx.fillStyle = '#3c3e43'; ctx.fill();
+    ctx.fillStyle = '#4a4c51'; circle(ctx, 0.17, -0.18, 0.07); ctx.fill();
+
+    // exhaust
+    ctx.strokeStyle = '#b9b2a6'; ctx.lineWidth = 0.035; ctx.beginPath(); ctx.moveTo(0.34, 0.13); ctx.quadraticCurveTo(0.46, 0.0, 0.3, -0.06); ctx.quadraticCurveTo(0.02, 0.0, -0.22, 0.13); ctx.stroke();
+    poly(ctx, [-0.2, 0.16, -0.78, 0.25, -0.79, 0.17, -0.22, 0.09]); ctx.fillStyle = '#c9c3b6'; ctx.fill();
+    poly(ctx, [-0.74, 0.245, -0.8, 0.255, -0.81, 0.165, -0.75, 0.175]); ctx.fillStyle = '#2b2b2b'; ctx.fill();
+
+    // fork: outer tubes fixed to the chassis, gold inner tubes ride with the wheel
+    const gold = ctx.createLinearGradient(fa[0] - 0.03, 0, fa[0] + 0.03, 0);
+    seg(ctx, fa[0], fa[1], OUTER_END[0] - DX * 0.04, OUTER_END[1] - DY * 0.04, 0.046, COL.gold);
+    seg(ctx, fa[0] - 0.008, fa[1] + 0.01, OUTER_END[0] - DX * 0.04 - 0.008, OUTER_END[1] - DY * 0.04 + 0.01, 0.01, 'rgba(255,240,200,0.55)');
+    seg(ctx, fa[0], fa[1], fa[0] - DX * 0.1, fa[1] - DY * 0.1, 0.06, '#202124'); // axle lug
+    if (xray) {
+      ctx.globalAlpha = 0.35;
+      seg(ctx, TOP[0], TOP[1], OUTER_END[0], OUTER_END[1], 0.07, '#3a3c41');
+      ctx.globalAlpha = 1;
+      const springTop = [TOP[0] + DX * 0.06, TOP[1] + DY * 0.06];
+      coil(ctx, springTop[0], springTop[1], fa[0] - DX * 0.12, fa[1] - DY * 0.12, 13, 0.04, COL.gold, 0.008);
+    } else {
+      seg(ctx, TOP[0], TOP[1], OUTER_END[0], OUTER_END[1], 0.07, '#2c2e33');
+      seg(ctx, TOP[0] - 0.015, TOP[1] + 0.005, OUTER_END[0] - 0.015, OUTER_END[1] + 0.005, 0.012, 'rgba(255,255,255,0.12)');
+    }
+    // triple clamps
+    seg(ctx, TOP[0] - 0.06, TOP[1] + 0.01, TOP[0] + 0.03, TOP[1] - 0.01, 0.04, '#8e949b');
+    seg(ctx, CLAMP_LO[0] - 0.07, CLAMP_LO[1] + 0.015, CLAMP_LO[0] + 0.03, CLAMP_LO[1] - 0.01, 0.045, '#8e949b');
+
+    ctx.globalAlpha = xray ? 0.3 : 1;
+    // front fender
+    poly(ctx, [0.46, 0.33, 0.62, 0.335, 0.8, 0.29, 0.96, 0.2, 0.95, 0.18, 0.79, 0.265, 0.62, 0.305, 0.47, 0.3]);
+    ctx.fillStyle = COL.plastic; ctx.fill();
+    // rear fender + side panel
+    poly(ctx, [-0.25, 0.34, -0.66, 0.345, -0.99, 0.43, -1.0, 0.405, -0.7, 0.3, -0.3, 0.29]); ctx.fillStyle = COL.plastic; ctx.fill();
+    poly(ctx, [-0.05, 0.3, -0.58, 0.335, -0.5, 0.08, -0.16, 0.04, -0.06, 0.12]); ctx.fillStyle = COL.plasticShade; ctx.fill();
+    ctx.save(); ctx.translate(-0.33, 0.16); ctx.rotate(0.06); ctx.scale(1, -1);
+    ctx.fillStyle = COL.graphic; ctx.font = '800 0.17px Archivo, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('01', 0, 0); ctx.restore();
+    // seat
+    poly(ctx, [0.2, 0.355, 0.05, 0.36, -0.66, 0.345, -0.67, 0.31, -0.2, 0.3, 0.17, 0.31]); ctx.fillStyle = COL.seat; ctx.fill();
+    // shroud / tank
+    poly(ctx, [0.45, 0.43, 0.28, 0.395, 0.1, 0.345, 0.12, 0.17, 0.3, 0.08, 0.43, 0.15, 0.49, 0.3]); ctx.fillStyle = COL.plastic; ctx.fill();
+    poly(ctx, [0.13, 0.26, 0.42, 0.33, 0.45, 0.25, 0.3, 0.19, 0.12, 0.2]); ctx.fillStyle = COL.graphic; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.006; ctx.beginPath();
+    for (let i = 0; i < 4; i++) { ctx.moveTo(0.22 + i * 0.05, 0.11 + i * 0.02); ctx.lineTo(0.27 + i * 0.05, 0.17 + i * 0.02); }
+    ctx.stroke();
+    // number plate on the forks
+    poly(ctx, [0.43, 0.52, 0.53, 0.49, 0.58, 0.3, 0.5, 0.27]); ctx.fillStyle = COL.plastic; ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // handlebar
+    seg(ctx, TOP[0] - 0.02, TOP[1], BARS[0] + 0.02, BARS[1] - 0.02, 0.03, '#2a2b2e');
+    seg(ctx, BARS[0] - 0.02, BARS[1] + 0.01, BARS[0] + 0.05, BARS[1] - 0.015, 0.026, '#8e949b');
+
+    // rider
+    if (sim.riderOn !== false && look.rider !== false) drawRider(ctx, sim, look);
+    ctx.restore();
+  }
+
+  function drawRider(ctx, sim, look) {
+    const k = Math.pow((sim.set.rider || 78) / 78, 0.45);
+    const p = riderPose(sim);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // far arm (shadowed)
+    seg(ctx, p.shoulder[0] - 0.02, p.shoulder[1], p.elbow[0] - 0.03, p.elbow[1], 0.075 * k, '#1f2125');
+    // legs
+    seg(ctx, p.hip[0], p.hip[1], p.knee[0], p.knee[1], 0.17 * k, COL.pants);
+    seg(ctx, p.knee[0], p.knee[1], p.ankle[0], p.ankle[1], 0.13 * k, COL.pants);
+    seg(ctx, p.hip[0] * 0.5 + p.knee[0] * 0.5, p.hip[1] * 0.5 + p.knee[1] * 0.5 + 0.03, p.knee[0], p.knee[1] + 0.02, 0.02 * k, 'rgba(233,226,211,0.35)');
+    // boot
+    poly(ctx, [p.knee[0] * 0.35 + p.ankle[0] * 0.65 - 0.06, p.knee[1] * 0.35 + p.ankle[1] * 0.65, p.knee[0] * 0.35 + p.ankle[0] * 0.65 + 0.05, p.knee[1] * 0.35 + p.ankle[1] * 0.65, PEG[0] + 0.09, PEG[1] - 0.005, PEG[0] + 0.1, PEG[1] - 0.04, PEG[0] - 0.1, PEG[1] - 0.04, PEG[0] - 0.07, PEG[1] + 0.03]);
+    ctx.fillStyle = COL.plastic; ctx.fill();
+    seg(ctx, PEG[0] - 0.09, PEG[1] - 0.035, PEG[0] + 0.1, PEG[1] - 0.035, 0.018, '#2b2b2b');
+    // knee brace
+    ctx.fillStyle = '#4a4d55'; circle(ctx, p.knee[0], p.knee[1], 0.05 * k); ctx.fill();
+    // torso
+    const sx = p.shoulder[0], sy = p.shoulder[1], hx = p.hip[0], hy = p.hip[1];
+    const ang = Math.atan2(sy - hy, sx - hx), nx = -Math.sin(ang), ny = Math.cos(ang);
+    poly(ctx, [hx + nx * 0.13 * k, hy + ny * 0.13 * k, sx + nx * 0.15 * k, sy + ny * 0.15 * k, sx - nx * 0.12 * k, sy - ny * 0.12 * k, hx - nx * 0.12 * k, hy - ny * 0.12 * k]);
+    ctx.fillStyle = COL.jersey; ctx.fill();
+    ctx.fillStyle = COL.pants; circle(ctx, hx, hy, 0.11 * k); ctx.fill();
+    seg(ctx, hx + nx * 0.02, hy + ny * 0.02, sx + nx * 0.03, sy + ny * 0.03, 0.025 * k, 'rgba(233,226,211,0.75)');
+    // neck brace + helmet
+    ctx.fillStyle = '#2b2d33'; circle(ctx, sx + 0.04, sy + 0.06, 0.07); ctx.fill();
+    const hx2 = p.head[0], hy2 = p.head[1];
+    ctx.fillStyle = COL.plastic; circle(ctx, hx2, hy2, 0.13); ctx.fill();
+    poly(ctx, [hx2 + 0.02, hy2 + 0.1, hx2 + 0.22, hy2 + 0.06, hx2 + 0.2, hy2 + 0.03, hx2 + 0.04, hy2 + 0.05]); ctx.fillStyle = COL.plasticShade; ctx.fill(); // peak
+    poly(ctx, [hx2 + 0.05, hy2 - 0.02, hx2 + 0.15, hy2 - 0.03, hx2 + 0.17, hy2 - 0.12, hx2 + 0.08, hy2 - 0.13]); ctx.fillStyle = COL.graphic; ctx.fill(); // chin bar
+    seg(ctx, hx2 + 0.03, hy2 + 0.02, hx2 + 0.135, hy2 + 0.015, 0.045, '#15161a'); // goggles
+    seg(ctx, hx2 + 0.08, hy2 + 0.026, hx2 + 0.13, hy2 + 0.024, 0.012, 'rgba(255,200,140,0.6)');
+    seg(ctx, hx2 - 0.12, hy2 + 0.01, hx2 - 0.02, hy2 + 0.06, 0.03, COL.graphic);
+    // near arm
+    seg(ctx, sx, sy, p.elbow[0], p.elbow[1], 0.085 * k, COL.jersey);
+    seg(ctx, p.elbow[0], p.elbow[1], BARS[0], BARS[1] + 0.005, 0.07 * k, COL.jersey);
+    ctx.fillStyle = COL.plastic; circle(ctx, BARS[0] + 0.005, BARS[1] + 0.005, 0.032); ctx.fill();
+    // head position in world, for trails
+    const c = Math.cos(sim.th), s = Math.sin(sim.th);
+    sim.headX = sim.x + hx2 * c - hy2 * s; sim.headY = sim.y + hx2 * s + hy2 * c;
+  }
+
+  // ---------------------------------------------------------------- dust
+  function Dust() {
+    const ps = [];
+    return {
+      emit(x, y, n, spd, vx0) {
+        for (let i = 0; i < n; i++) {
+          if (ps.length > 260) ps.shift();
+          ps.push({ x, y, vx: vx0 + (Math.random() - 0.3) * spd, vy: Math.random() * spd * 0.6, r: 0.015 + Math.random() * 0.03, life: 1, decay: 0.7 + Math.random() * 0.9 });
+        }
+      },
+      update(dt) {
+        for (const p of ps) { p.vy -= 1.2 * dt; p.vx *= 1 - 1.5 * dt; p.vy *= 1 - 1.2 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += 0.12 * dt; p.life -= p.decay * dt; }
+        while (ps.length && ps[0].life <= 0) ps.shift();
+        for (let i = ps.length - 1; i >= 0; i--) if (ps[i].life <= 0) ps.splice(i, 1);
+      },
+      draw(ctx) {
+        for (const p of ps) {
+          ctx.fillStyle = `rgba(196,150,108,${0.16 * Math.max(0, p.life) * Math.max(0, p.life)})`;
+          circle(ctx, p.x, p.y, p.r); ctx.fill();
+        }
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------- views + loop
+  const views = [];
+  const io = new IntersectionObserver((ents) => {
+    for (const e of ents) { const v = views.find((v) => v.el === e.target); if (v) v.visible = e.isIntersecting; }
+  }, { rootMargin: '120px' });
+  function addView(v) { v.visible = false; views.push(v); io.observe(v.el); return v; }
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    for (const v of views) if (v.visible) v.frame(dt);
+    requestAnimationFrame(loop);
+  }
+
+  const SUB = 1 / 2000;
+  function stepSim(sim, dt, scale = 1) {
+    sim._acc = (sim._acc || 0) + dt * scale;
+    const n = Math.min(400, Math.floor(sim._acc / SUB));
+    sim._acc -= n * SUB;
+    for (let i = 0; i < n; i++) sim.step(SUB);
+    sim.plan();
+  }
+
+  function followCam(cam, sim, dt, lead, yOff) {
+    const tx = sim.x + lead;
+    const ty = Math.max(sim.y, P.terrain(sim.track, sim.x) + 0.55) + yOff;
+    if (cam.init) { cam.x = tx; cam.y = ty; cam.init = false; }
+    cam.x = tx;
+    cam.y += (ty - cam.y) * Math.min(1, dt * 3.2);
+  }
+
+  function rideScene(ctx, W, H, sim, cam, dust, look, dt) {
+    drawSky(ctx, W, H, cam, look.horizon ?? 0.6);
+    let shake = 0;
+    if (look.shake) { shake = look.shake.v; look.shake.v *= Math.pow(0.02, dt); }
+    const sc = { ...cam, x: cam.x + (Math.random() - 0.5) * shake * 0.04, y: cam.y + (Math.random() - 0.5) * shake * 0.04 };
+    worldTransform(ctx, sc, W, H);
+    drawGround(ctx, sim.track, sc, W, H);
+    if (dust) {
+      if (sim.loadR > 300 && sim.cfg.speed > 1) dust.emit(sim.xr - 0.2, P.terrain(sim.track, sim.xr) + 0.05, Math.random() < sim.loadR / 4000 ? 2 : 1, 1.6, -0.5);
+      dust.update(dt);
+      dust.draw(ctx);
+    }
+    drawBike(ctx, sim, look);
+    return sc;
+  }
+
+  // ---------------------------------------------------------------- HERO
+  {
+    const cv = $('#hero'), ctx = cv.getContext('2d');
+    const sim = P.Sim(P.TRACKS.trail, { ...STOCK }, { x0: 2 });
+    const cam = { x: 0, y: 0, scale: 80, ax: 0.6, ay: 0.42, init: true };
+    const dust = Dust();
+    const v = addView({ el: cv, frame(dt) {
+      const { W, H } = fit(cv);
+      const narrow = W / (window.devicePixelRatio || 1) < 700;
+      cam.scale = W / (narrow ? 5.4 : 8.2); cam.ax = narrow ? 0.5 : 0.7; cam.ay = narrow ? 0.3 : 0.48;
+      if (!reduceMotion) stepSim(sim, dt);
+      followCam(cam, sim, dt, narrow ? 0.1 : 0.2, 0.15);
+      rideScene(ctx, W, H, sim, cam, dust, { horizon: narrow ? 0.4 : 0.6 }, dt);
+      // bottom scrim for the title
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      const g = ctx.createLinearGradient(0, H * 0.45, 0, H);
+      g.addColorStop(0, 'rgba(12,11,10,0)'); g.addColorStop(1, 'rgba(12,11,10,0.92)');
+      ctx.fillStyle = g; ctx.fillRect(0, H * 0.45, W, H * 0.55);
+    } });
+  }
+
+  // ---------------------------------------------------------------- LANES: locked vs working
+  {
+    const cv = $('#lanes'), ctx = cv.getContext('2d');
+    const set = { ...STOCK, speed: 30 };
+    const sims = [P.Sim(P.TRACKS.bumps, set, { rigid: true }), P.Sim(P.TRACKS.bumps, set, {})];
+    const trails = [[], []];
+    const dusts = [Dust(), Dust()];
+    const cams = [{ init: true, ax: 0.5, ay: 0.5 }, { init: true, ax: 0.5, ay: 0.5 }];
+    const out = [[$('#l0-jolt'), $('#l0-grip')], [$('#l1-jolt'), $('#l1-grip')]];
+    let tick = 0;
+    const best = [{ jolt: 0, grip: 1 }, { jolt: 0, grip: 1 }];
+    addView({ el: cv, frame(dt) {
+      const { W, H } = fit(cv);
+      const laneH = Math.floor(H / 2);
+      for (let i = 0; i < 2; i++) {
+        const sim = sims[i], cam = cams[i];
+        stepSim(sim, dt);
+        if (sim.x - (sim._lapStart ?? 0) > sim.track.P) { sim._lapStart = sim.x; sim.newStats(); }
+        cam.scale = Math.min(W / Math.max(5.5, Math.min(9, W / (window.devicePixelRatio || 1) / 110)), laneH / 2.6);
+        followCam(cam, sim, dt, 0.4, 0.1);
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.beginPath(); ctx.rect(0, i * laneH, W, laneH); ctx.clip();
+        drawSky(ctx, W, laneH, cam, 0.55, i * laneH);
+        const camL = { ...cam, ay: (0.5 * laneH + i * laneH) / H };
+        worldTransform(ctx, camL, W, H);
+        drawGround(ctx, sim.track, camL, W, H);
+        dusts[i].update(dt);
+        if (sim.loadR > 300) dusts[i].emit(sim.xr - 0.2, P.terrain(sim.track, sim.xr) + 0.05, 1, 1.4, -0.4);
+        dusts[i].draw(ctx);
+        drawBike(ctx, sim, {});
+        // head trail
+        const tr = trails[i];
+        tr.push([sim.headX, sim.headY]); while (tr.length > 160) tr.shift();
+        ctx.beginPath(); tr.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.lineWidth = 2.2 / camL.scale; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.stroke();
+        ctx.restore();
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = 'rgba(232,220,198,0.2)'; ctx.fillRect(0, laneH - 1, W, 2);
+      if ((tick += dt) > 0.3) {
+        tick = 0;
+        for (let i = 0; i < 2; i++) {
+          const s = sims[i].summary();
+          if (s.t > 2) { out[i][0].textContent = s.jolt.toFixed(1) + ' g'; out[i][1].textContent = Math.round(s.grip * 100) + '%'; }
+        }
+      }
+    } });
+  }
+
+  // ---------------------------------------------------------------- slider builder
+  function slider(host, o) {
+    const wrap = document.createElement('div'); wrap.className = 'ctl';
+    wrap.innerHTML = `<div class="ctl-head"><label for="${o.id}">${o.label}</label><span class="ctl-val" id="${o.id}-val"></span></div>
+      <input type="range" id="${o.id}" min="${o.min}" max="${o.max}" step="${o.step}" value="${o.value}">
+      ${o.ends ? `<div class="ctl-ends"><span>${o.ends[0]}</span><span>${o.ends[1]}</span></div>` : ''}
+      ${o.help ? `<p class="ctl-help">${o.help}</p>` : ''}`;
+    host.appendChild(wrap);
+    const input = wrap.querySelector('input'), val = wrap.querySelector('.ctl-val');
+    input.style.setProperty('--c', o.color || 'var(--gold)');
+    const pct = (v) => ((v - o.min) / (o.max - o.min)) * 100 + '%';
+    if (o.stock != null) input.style.setProperty('--stock', pct(o.stock)); else input.style.setProperty('--stock', '-10%');
+    const paint = () => { const v = +input.value; input.style.setProperty('--pct', pct(v)); val.innerHTML = o.fmt(v); };
+    input.addEventListener('input', () => { paint(); o.onInput(+input.value); });
+    paint();
+    return { input, set(v) { input.value = v; paint(); }, get value() { return +input.value; } };
+  }
+  const fmtKg = (v) => `${v} kg`;
+  const fmtSpring = (v) => `${v.toFixed(1)} kg/mm`;
+  const fmtPre = (v) => `${v.toFixed(1)} mm <small>(${(v / 1.5).toFixed(1)} turns)</small>`;
+  const fmtClicks = (firm) => { const out = 20 - firm; return `${out} click${out === 1 ? '' : 's'} out`; };
+  const fmtSpeed = (v) => `${v} km/h`;
+
+  function sagOf(set, riderOn = true) {
+    const cfg = P.makeCfg(set);
+    return { race: P.sag(cfg, riderOn ? set.rider : 0).rear, stat: P.sag(cfg, 0).rear, front: P.sag(cfg, set.rider).front, cfg };
+  }
+  function judgeRace(m) { return m < 92 ? ['warn', 'Too high'] : m > 112 ? ['bad', 'Too low'] : m < 96 || m > 108 ? ['warn', 'Close'] : ['good', 'On target']; }
+  function judgeStatic(m) { return m < 25 ? ['bad', 'Spring too soft'] : m > 45 ? ['warn', 'Spring too stiff'] : ['good', 'Spring suits you']; }
+  const pill = ([cls, txt]) => `<span class="pill ${cls}">${txt}</span>`;
+
+  // ---------------------------------------------------------------- SAG LAB
+  {
+    const cv = $('#sag'), ctx = cv.getContext('2d');
+    const set = { ...STOCK };
+    const sim = P.Sim(P.TRACKS.flat, set, { static: true, x0: 30 });
+    const cam = { x: 30, y: 0.5, scale: 200, ax: 0.5, ay: 0.5 };
+    const host = $('#sag-controls');
+    const chart = $('#sag-chart');
+    const update = () => { sim.setSettings(set); paintReadouts(); drawChart(); };
+    slider(host, { id: 'sag-w', label: 'Rider weight, in gear', min: 45, max: 125, step: 1, value: set.rider, stock: STOCK.rider, fmt: fmtKg, onInput: (v) => { set.rider = v; update(); } });
+    slider(host, { id: 'sag-k', label: 'Shock spring', min: 3.8, max: 7.2, step: 0.2, value: set.spring, stock: STOCK.spring, color: 'var(--blue)', fmt: (v) => `${fmtSpring(v)} <small>· fork ${P.forkRateFor(v).toFixed(2)}</small>`, onInput: (v) => { set.spring = v; update(); }, help: 'Swapping the spring is a workshop job. It changes how steeply the force climbs.' });
+    slider(host, { id: 'sag-p', label: 'Preload', min: 0, max: 25, step: 0.5, value: set.preload, stock: STOCK.preload, color: 'var(--blue)', fmt: fmtPre, onInput: (v) => { set.preload = v; update(); }, help: 'Turning the ring takes a minute. It lifts the whole curve but leaves the slope alone.' });
+    const btn = $('#sag-rider');
+    btn.addEventListener('click', () => {
+      sim.riderOn = !sim.riderOn; btn.setAttribute('aria-pressed', sim.riderOn); btn.textContent = sim.riderOn ? 'Rider on' : 'Rider off';
+      if (sim.riderOn) { sim.lc = 0; sim.yR = sim.y + GEO.pegY + 0.62 + 0.05; sim.vyR = -1; }
+      sim.setSettings(set);
+    });
+
+    function paintReadouts() {
+      const s = sagOf(set);
+      const r = mm(s.race), st = mm(s.stat);
+      $('#sag-race').textContent = r + ' mm'; $('#sag-race-v').innerHTML = pill(judgeRace(r));
+      $('#sag-static').textContent = st + ' mm'; $('#sag-static-v').innerHTML = pill(judgeStatic(st));
+    }
+
+    function drawChart() {
+      const Wc = 960, Hc = 320, l = 64, r = 944, t = 18, b = 272;
+      const X = (mmv) => l + (mmv / 310) * (r - l), Y = (kg) => b - (kg / 220) * (b - t);
+      const s = sagOf(set), cfg = s.cfg, cfg0 = P.makeCfg(STOCK);
+      const curve = (cf) => { let d = ''; for (let i = 0; i <= 124; i++) { const sm = (i / 124) * 0.31; const kg = P.shockSpring(sm, cf) / 9.81; if (kg > 222) break; d += (i ? 'L' : 'M') + X(sm * 1000).toFixed(1) + ' ' + Y(kg).toFixed(1); } return d; };
+      const load = P.sag(cfg, set.rider).loadR / 9.81, load0 = P.sag(cfg, 0).loadR / 9.81;
+      const race = mm(s.race), stat = mm(s.stat);
+      let g = '';
+      g += `<rect x="${X(95)}" y="${t}" width="${X(110) - X(95)}" height="${b - t}" fill="rgba(140,200,138,0.08)"/>`;
+      g += `<rect x="${X(28)}" y="${t}" width="${X(45) - X(28)}" height="${b - t}" fill="rgba(140,200,138,0.06)"/>`;
+      for (let x = 0; x <= 300; x += 50) g += `<line x1="${X(x)}" x2="${X(x)}" y1="${t}" y2="${b}" stroke="rgba(232,220,198,0.07)"/><text x="${X(x)}" y="${b + 18}" fill="${COL.dim}" font-size="11" text-anchor="middle" font-family="JetBrains Mono, monospace">${x}</text>`;
+      for (let y = 0; y <= 200; y += 50) g += `<line x1="${l}" x2="${r}" y1="${Y(y)}" y2="${Y(y)}" stroke="rgba(232,220,198,0.07)"/><text x="${l - 8}" y="${Y(y) + 4}" fill="${COL.dim}" font-size="11" text-anchor="end" font-family="JetBrains Mono, monospace">${y}</text>`;
+      g += `<text x="${(l + r) / 2}" y="${Hc - 6}" fill="${COL.dim}" font-size="11" text-anchor="middle">Rear wheel travel (mm)</text>`;
+      g += `<text x="14" y="${(t + b) / 2}" fill="${COL.dim}" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${(t + b) / 2})">Spring force (kg)</text>`;
+      g += `<text x="${X(102)}" y="${t + 12}" fill="${COL.good}" font-size="10" text-anchor="middle" opacity="0.8">race sag target</text>`;
+      g += `<text x="${X(36)}" y="${t + 12}" fill="${COL.good}" font-size="10" text-anchor="middle" opacity="0.8">static target</text>`;
+      g += `<path d="${curve(cfg0)}" fill="none" stroke="rgba(232,220,198,0.35)" stroke-width="1.5" stroke-dasharray="5 5"/>`;
+      g += `<path d="${curve(cfg)}" fill="none" stroke="${COL.blue}" stroke-width="3"/>`;
+      g += `<line x1="${l}" x2="${r}" y1="${Y(load)}" y2="${Y(load)}" stroke="${COL.text}" stroke-width="1.2"/><text x="${r}" y="${Y(load) - 6}" fill="${COL.text}" font-size="11" text-anchor="end">Bike + ${set.rider} kg rider: ${Math.round(load)} kg on the rear</text>`;
+      g += `<line x1="${l}" x2="${r}" y1="${Y(load0)}" y2="${Y(load0)}" stroke="${COL.dim}" stroke-width="1.2" stroke-dasharray="3 4"/><text x="${r}" y="${Y(load0) + 15}" fill="${COL.dim}" font-size="11" text-anchor="end">Bike alone: ${Math.round(load0)} kg</text>`;
+      g += `<circle cx="${X(race)}" cy="${Y(load)}" r="5.5" fill="${COL.ink}" stroke="${COL.blue}" stroke-width="2.5"/>`;
+      g += `<circle cx="${X(stat)}" cy="${Y(load0)}" r="5" fill="${COL.ink}" stroke="${COL.dim}" stroke-width="2"/>`;
+      g += `<text x="${X(race) + 9}" y="${Y(load) + 18}" fill="${COL.blue}" font-size="11" font-family="JetBrains Mono, monospace">${race} mm</text>`;
+      g += `<text x="${X(stat) + 9}" y="${Y(load0) + 18}" fill="${COL.dim}" font-size="11" font-family="JetBrains Mono, monospace">${stat} mm</text>`;
+      { let sx = 0.05; while (sx < 0.3 && P.shockSpring(sx, cfg0) / 9.81 < 200) sx += 0.005; g += `<text x="${X(sx * 1000) + 8}" y="${Y(200) + 4}" fill="rgba(232,220,198,0.5)" font-size="11">stock spring</text>`; }
+      chart.innerHTML = g;
+    }
+
+    addView({ el: cv, frame(dt) {
+      const { W, H } = fit(cv);
+      stepSim(sim, dt);
+      const narrow = W / (window.devicePixelRatio || 1) < 560;
+      cam.scale = Math.min(W / (narrow ? 3.3 : 2.9), H / 2.25); cam.x = narrow ? 29.75 : 29.9; cam.y = 0.82; cam.ax = 0.5; cam.ay = 0.5;
+      drawSky(ctx, W, H, cam, 0.7);
+      worldTransform(ctx, cam, W, H);
+      drawGround(ctx, sim.track, cam, W, H);
+      drawBike(ctx, sim, {});
+      // sag ruler beside the rear wheel
+      const c = Math.cos(sim.th), s = Math.sin(sim.th);
+      const ref = [-0.72, 0.3];
+      const qx = sim.x + ref[0] * c - ref[1] * s, qy = sim.y + ref[0] * s + ref[1] * c;
+      const sagNow = Math.max(0, sim.sr);
+      const top = qy + sagNow;
+      const rx = qx - 0.32;
+      ctx.lineWidth = 2 / cam.scale; ctx.setLineDash([6 / cam.scale, 5 / cam.scale]);
+      seg(ctx, rx - 0.08, top, qx + 0.05, top, 1.5 / cam.scale, 'rgba(232,220,198,0.55)');
+      ctx.setLineDash([]);
+      seg(ctx, rx - 0.08, qy, qx + 0.05, qy, 2 / cam.scale, COL.blue);
+      seg(ctx, rx, qy, rx, top, 2 / cam.scale, COL.blue);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      const [px, py] = toScreen(cam, W, H, rx - 0.1, top);
+      const [px2, py2] = toScreen(cam, W, H, rx - 0.1, qy);
+      const dpr = W / cv.getBoundingClientRect().width;
+      ctx.font = `600 ${(narrow ? 11 : 12) * dpr}px JetBrains Mono, monospace`; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(232,220,198,0.7)'; ctx.fillText(narrow ? 'extended' : 'fully extended', px, py - 2 * dpr);
+      ctx.fillStyle = COL.blue; ctx.fillText(`${mm(sagNow)} mm`, px, (py + py2) / 2 + 6 * dpr);
+      ctx.fillText(sim.riderOn ? 'race sag' : 'static sag', px, (py + py2) / 2 + 22 * dpr);
+    } });
+    paintReadouts(); drawChart();
+  }
+
+  // ---------------------------------------------------------------- DROP TEST
+  {
+    const cv = $('#drop'), ctx = cv.getContext('2d');
+    const ch = $('#drop-chart'), cctx = ch.getContext('2d');
+    const set = { ...STOCK };
+    let sim = null, t = 0, trace = [], ghosts = [], peak = 0, minAfter = 1, peakT = 0;
+    const look = { xray: false };
+    const T_TRACE = 2.4, T_CYCLE = 3.0;
+    function drop() {
+      if (trace.length > 20) { ghosts.push({ pts: trace, label: `C${set.comp} R${set.reb}` }); while (ghosts.length > 3) ghosts.shift(); }
+      sim = P.Sim(P.TRACKS.flat, set, { static: true, drop: 0.5, x0: 30 });
+      t = 0; trace = []; peak = 0; minAfter = 1; peakT = 0;
+    }
+    const host = $('#drop-controls');
+    slider(host, { id: 'drop-c', label: 'Compression', min: 0, max: 20, step: 1, value: 20 - set.comp, stock: 20 - STOCK.comp, ends: ['Soft', 'Firm'], fmt: fmtClicks, onInput: (v) => { set.comp = 20 - v; drop(); }, help: 'Resists the bike squashing into its travel.' });
+    slider(host, { id: 'drop-r', label: 'Rebound', min: 0, max: 20, step: 1, value: 20 - set.reb, stock: 20 - STOCK.reb, ends: ['Fast', 'Slow'], color: 'var(--blue)', fmt: fmtClicks, onInput: (v) => { set.reb = 20 - v; drop(); }, help: 'Controls how quickly it extends again.' });
+    const xb = $('#drop-xray');
+    xb.addEventListener('click', () => { look.xray = !look.xray; xb.setAttribute('aria-pressed', look.xray); });
+    drop();
+    const cam = { x: 30, y: 0.9, scale: 150, ax: 0.5, ay: 0.5 };
+    let rtick = 0;
+    addView({ el: cv, frame(dt) {
+      const { W, H } = fit(cv);
+      stepSim(sim, dt); t += dt;
+      if (t <= T_TRACE) {
+        trace.push([sim.t, sim.sr]);
+        if (sim.sr > peak) { peak = sim.sr; peakT = sim.t; }
+        if (peak > 0.12 && sim.t > peakT + 0.05) minAfter = Math.min(minAfter, sim.sr);
+      }
+      if (t > T_CYCLE) drop();
+      cam.scale = Math.min(W / 3.0, H / 2.75); cam.ay = 0.53;
+      drawSky(ctx, W, H, cam, 0.72);
+      worldTransform(ctx, cam, W, H);
+      drawGround(ctx, sim.track, cam, W, H);
+      drawBike(ctx, sim, look);
+      if ((rtick += dt) > 0.2) {
+        rtick = 0;
+        const sagR = P.sag(sim.cfg, set.rider).rear;
+        $('#drop-peak').textContent = peak > 0.05 ? `${mm(peak)} mm` : '…';
+        $('#drop-over').textContent = minAfter < 1 ? `${Math.max(0, mm(sagR - minAfter))} mm` : '…';
+      }
+      drawDropChart();
+    } });
+    function drawDropChart() {
+      const { W, H } = fit(ch);
+      const dpr = W / ch.getBoundingClientRect().width;
+      cctx.setTransform(1, 0, 0, 1, 0, 0); cctx.clearRect(0, 0, W, H);
+      const l = 46 * dpr, r = W - 10 * dpr, tp = 10 * dpr, b = H - 26 * dpr;
+      const X = (s) => l + (s / T_TRACE) * (r - l), Y = (m) => b - (m / 0.31) * (b - tp);
+      cctx.font = `${10.5 * dpr}px JetBrains Mono, monospace`; cctx.fillStyle = COL.dim; cctx.textAlign = 'right'; cctx.textBaseline = 'middle';
+      cctx.strokeStyle = 'rgba(232,220,198,0.08)'; cctx.lineWidth = 1;
+      for (let m = 0; m <= 300; m += 100) { cctx.beginPath(); cctx.moveTo(l, Y(m / 1000)); cctx.lineTo(r, Y(m / 1000)); cctx.stroke(); cctx.fillText(m + ' mm', l - 6 * dpr, Y(m / 1000)); }
+      cctx.textAlign = 'center'; cctx.textBaseline = 'top';
+      for (let s = 0; s <= T_TRACE + 0.01; s += 0.5) cctx.fillText(s.toFixed(1) + ' s', X(s), b + 7 * dpr);
+      const sagR = P.sag(P.makeCfg(set), set.rider).rear;
+      cctx.setLineDash([5 * dpr, 5 * dpr]); cctx.strokeStyle = COL.dim; cctx.beginPath(); cctx.moveTo(l, Y(sagR)); cctx.lineTo(r, Y(sagR)); cctx.stroke(); cctx.setLineDash([]);
+      cctx.strokeStyle = COL.bad; cctx.globalAlpha = 0.6; cctx.beginPath(); cctx.moveTo(l, Y(0.31)); cctx.lineTo(r, Y(0.31)); cctx.stroke(); cctx.globalAlpha = 1;
+      const path = (pts) => { cctx.beginPath(); pts.forEach(([tt, m], i) => { const x = X(tt), y = Y(clamp(m, 0, 0.31)); i ? cctx.lineTo(x, y) : cctx.moveTo(x, y); }); };
+      ghosts.forEach((g, i) => {
+        cctx.strokeStyle = `rgba(232,220,198,${0.14 + i * 0.08})`; cctx.lineWidth = 1.5 * dpr; path(g.pts); cctx.stroke();
+        const lp = g.pts[Math.min(g.pts.length - 1, Math.floor(g.pts.length * 0.62))];
+        if (lp) { cctx.fillStyle = `rgba(232,220,198,${0.3 + i * 0.12})`; cctx.textAlign = 'left'; cctx.fillText(g.label, X(lp[0]) + 4 * dpr, Y(lp[1]) + 3 * dpr); }
+      });
+      cctx.strokeStyle = COL.blue; cctx.lineWidth = 2.5 * dpr; path(trace); cctx.stroke();
+    }
+  }
+
+  // ---------------------------------------------------------------- THE WORKSHOP
+  const REF_JOLT = { trail: 3.1, chop: 3.9, whoops: 3.2, jump: 6.3 };
+  const SCENES = [
+    { id: 'trail', name: 'Trail loop', short: 'Explore', track: 'trail', set: { speed: 40 },
+      problem: 'A mixed loop: rollers, a few whoops, a patch of rocks and a small jump. Everything is at stock for a 78 kg rider, so nothing is broken yet.',
+      goal: 'Break it on purpose. Try rebound fully fast, or compression fully soft, and see what the coach says.', check: null },
+    { id: 'landing', name: 'Flat landing', short: 'Bottoming', track: 'jump', set: { speed: 35, comp: 17 },
+      problem: 'You came up short and landed on the flat: about 5 m/s straight down, like stepping off a 1.3 m wall. Compression is nearly wide open, so the rear slams into the end of its stroke.',
+      goal: 'Land without bottoming out.', check: (s) => s.bottoms === 0 },
+    { id: 'whoops', name: 'Whoops', short: 'Packing', track: 'whoops', set: { speed: 45, reb: 2 },
+      problem: 'Fourteen rollers in a row at 45 km/h. Rebound is so slow that the rear can’t extend before the next whoop arrives, so it sinks deeper on every one. Riders call this packing.',
+      goal: 'Keep the rear’s average depth through the whoops under 50% of its travel.', check: (s) => s.packR != null && s.packR < 0.5 },
+    { id: 'rocks', name: 'Rock garden', short: 'Harsh', track: 'chop', set: { speed: 32, comp: 1 },
+      problem: 'Sharp rocks at 32 km/h. Compression is almost fully closed, so each rock shoves the whole bike instead of just the wheel. Your hands take every hit.',
+      goal: 'Bring the hardest jolt under 4.5 g.', check: (s) => s.jolt < 4.5 },
+    { id: 'pogo', name: 'Pogo', short: 'Kicking', track: 'jump', set: { speed: 35, reb: 19 },
+      problem: 'The same flat landing, but with rebound wide open. The spring fires the bike straight back up, the rear unloads and the bike bucks.',
+      goal: 'Land and settle without the rear kicking.', check: (s) => s.hits > 0 && s.kicks === 0 },
+    { id: 'heavy', name: 'Heavy rider', short: 'Wrong spring', track: 'jump', set: { speed: 35, rider: 108 },
+      problem: 'A 108 kg rider on springs chosen for 78 kg. The bike sags far too much and bottoms on the landing. Winding in preload looks like a fix, but watch the static sag.',
+      goal: 'Race sag 96–108 mm, static sag 25–45 mm, and no bottoming.', check: (s, sg) => s.bottoms === 0 && mm(sg.race) >= 96 && mm(sg.race) <= 108 && mm(sg.stat) >= 25 && mm(sg.stat) <= 45 },
+  ];
+  const solved = new Set();
+  try { JSON.parse(localStorage.getItem('egod-susp-solved') || '[]').forEach((k) => solved.add(k)); } catch (e) { /* storage unavailable */ }
+
+  const lab = {
+    scene: SCENES[0], set: { ...STOCK, speed: 40 }, sim: null, cam: { init: true, ax: 0.42, ay: 0.55, scale: 100 },
+    dust: Dust(), shake: { v: 0 }, slow: false, paused: false, xray: false,
+    statsStart: 0, lapSum: null, tele: [], flashes: [], solvedNow: false,
+  };
+  const ctl = {};
+  {
+    const host = $('#lab-controls');
+    const group = (t) => { const d = document.createElement('p'); d.className = 'group-title'; d.textContent = t; host.appendChild(d); };
+    group('Rider');
+    ctl.rider = slider(host, { id: 'lab-w', label: 'Weight, in gear', min: 45, max: 125, step: 1, value: lab.set.rider, stock: STOCK.rider, fmt: fmtKg, onInput: (v) => change({ rider: v }) });
+    ctl.speed = slider(host, { id: 'lab-v', label: 'Speed', min: 15, max: 65, step: 1, value: lab.set.speed, fmt: fmtSpeed, onInput: (v) => change({ speed: v }), help: 'Faster means harder hits. Tuning that works at 30 km/h can fall apart at 50.' });
+    group('Springs');
+    ctl.spring = slider(host, { id: 'lab-k', label: 'Spring rate', min: 3.8, max: 7.2, step: 0.2, value: lab.set.spring, stock: STOCK.spring, color: 'var(--blue)', fmt: (v) => `${fmtSpring(v)} <small>· fork ${P.forkRateFor(v).toFixed(2)}</small>`, onInput: (v) => change({ spring: v }), help: 'Shock and fork springs, swapped as a matched pair.' });
+    ctl.preload = slider(host, { id: 'lab-p', label: 'Shock preload', min: 0, max: 25, step: 0.5, value: lab.set.preload, stock: STOCK.preload, color: 'var(--blue)', fmt: fmtPre, onInput: (v) => change({ preload: v }), help: 'Sets ride height. It doesn’t make the spring stiffer.' });
+    group('Damping (fork and shock together)');
+    ctl.comp = slider(host, { id: 'lab-c', label: 'Compression', min: 0, max: 20, step: 1, value: 20 - lab.set.comp, stock: 20 - STOCK.comp, ends: ['Soft', 'Firm'], fmt: fmtClicks, onInput: (v) => change({ comp: 20 - v }), help: 'Firmer holds up on big hits and gets harsh on small ones.' });
+    ctl.reb = slider(host, { id: 'lab-r', label: 'Rebound', min: 0, max: 20, step: 1, value: 20 - lab.set.reb, stock: 20 - STOCK.reb, ends: ['Fast', 'Slow'], color: 'var(--blue)', fmt: fmtClicks, onInput: (v) => change({ reb: 20 - v }), help: 'Too fast bucks you. Too slow packs down.' });
+    const row = document.createElement('div'); row.className = 'btn-row';
+    row.innerHTML = '<button class="btn small" type="button" id="lab-stock">Reset to stock</button><button class="btn small" type="button" id="lab-again">Restore the problem</button>';
+    host.appendChild(row);
+    $('#lab-stock').addEventListener('click', () => { applySettings({ ...STOCK, speed: lab.set.speed }); });
+    $('#lab-again').addEventListener('click', () => loadScene(lab.scene, false));
+  }
+  function syncSliders() {
+    ctl.rider.set(lab.set.rider); ctl.speed.set(lab.set.speed); ctl.spring.set(lab.set.spring);
+    ctl.preload.set(lab.set.preload); ctl.comp.set(20 - lab.set.comp); ctl.reb.set(20 - lab.set.reb);
+  }
+  function resetStats() { lab.sim.newStats(); lab.statsStart = lab.sim.x; lab.lapSum = null; renderCoach(); }
+  function change(part) { Object.assign(lab.set, part); lab.sim.setSettings(lab.set); resetStats(); renderBrief(); }
+  function applySettings(s) { lab.set = { ...s }; syncSliders(); lab.sim.setSettings(lab.set); resetStats(); renderBrief(); }
+
+  function loadScene(sc, scroll) {
+    lab.scene = sc;
+    lab.set = { ...STOCK, ...sc.set };
+    lab.sim = P.Sim(P.TRACKS[sc.track], lab.set, { x0: sc.track === 'jump' ? 6 : 0 });
+    lab.cam.init = true; lab.tele = []; lab.flashes = [];
+    syncSliders(); resetStats();
+    $('#lab-tag').textContent = sc.name;
+    document.querySelectorAll('.scn').forEach((b) => b.setAttribute('aria-pressed', b.dataset.id === sc.id));
+    renderBrief();
+    if (scroll) $('#lab').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  function renderScenes() {
+    const host = $('#scenarios');
+    host.innerHTML = '';
+    for (const sc of SCENES) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'scn'; b.dataset.id = sc.id; b.setAttribute('aria-pressed', sc === lab.scene);
+      b.innerHTML = `<b>${sc.name}${solved.has(sc.id) ? ' <span class="done" aria-label="solved">✓</span>' : ''}</b><span>${sc.short}</span>`;
+      b.addEventListener('click', () => loadScene(sc, false));
+      host.appendChild(b);
+    }
+  }
+
+  function renderBrief() {
+    const sc = lab.scene, s = lab.lapSum, sg = sagOf(lab.set);
+    let status = '';
+    if (sc.check) {
+      if (!s) status = '<span class="pill info">Riding a lap…</span>';
+      else status = sc.check(s, sg) ? '<span class="pill good">Fixed</span>' : '<span class="pill bad">Not yet</span>';
+    }
+    $('#brief').innerHTML = `<h3>${sc.name}</h3><p>${sc.problem}</p><div class="goal"><p><b>${sc.check ? 'Your goal: ' : ''}</b>${sc.goal}</p>${status}</div>`;
+  }
+
+  function coachItems() {
+    const set = lab.set, s = lab.lapSum, sg = sagOf(set);
+    const items = [];
+    const race = mm(sg.race), stat = mm(sg.stat);
+    if (race > 112) items.push(['bad', `Sits too low: ${race} mm of race sag (aim for 100–105). It starts every bump already deep in its travel. Add preload, or a stiffer spring if static sag is already low.`]);
+    else if (race < 92) items.push(['warn', `Sits too high: ${race} mm of race sag (aim for 100–105). The rear can’t drop into holes and the bike feels tall and nervous. Take some preload off.`]);
+    if (stat < 25) items.push(['bad', `Spring too soft for ${set.rider} kg. Preload is doing the spring’s job, so static sag is only ${stat} mm (aim for 30–40). Go up a spring rate, then reset preload.`]);
+    else if (stat > 45) items.push(['warn', `Spring too stiff for ${set.rider} kg: static sag is ${stat} mm (aim for 30–40). Go down a spring rate.`]);
+    if (!s) return { items, listening: true };
+    const v0 = SCENES.find((x) => x.track === lab.scene.track && x.set.speed)?.set.speed || 40;
+    const ref = (REF_JOLT[lab.scene.track] || 4) * Math.max(0.6, set.speed / v0);
+    const ends = s.bottomF && s.bottomR ? 'both ends' : s.bottomR ? 'rear' : 'front';
+    if (s.bottoms) items.push(['bad', `Bottomed out ${s.bottoms === 1 ? 'once' : s.bottoms + ' times'} at the ${ends}. Add 2 clicks of compression. If it still bottoms with sag right, the spring is too soft.`]);
+    if (s.packR != null && s.packR > 0.5) items.push(['bad', `Packing: through the whoops the rear sat ${Math.round(s.packR * 100)}% deep on average. Rebound is too slow to recover between bumps. Open it 2–3 clicks.`]);
+    if (s.kicks) items.push(['bad', `The rear kicked after the hit, springing back ${Math.round(s.over * 100)}% past its sag point and unloading the tire. Rebound is too fast. Close it 2 clicks.`]);
+    if (s.jolt > ref * 1.2) items.push(['warn', `Harsh: the hardest jolt at the bars was ${s.jolt.toFixed(1)} g. Soften compression a couple of clicks so the wheel moves instead of the bike.`]);
+    const used = Math.max(s.maxF, s.maxR);
+    if (used < 0.7 && !s.bottoms && (lab.scene.track === 'jump' || lab.scene.track === 'whoops')) items.push(['info', `Only ${Math.round(used * 100)}% of the travel used on the biggest hit. You could soften compression and ride smoother.`]);
+    if (!items.some((i) => i[0] === 'bad' || i[0] === 'warn')) items.push(['good', `Balanced. ${Math.round(used * 100)}% of the travel used, no bottoming, tires loaded ${Math.round(s.grip * 100)}% of the time.`]);
+    const rank = { bad: 0, warn: 1, info: 2, good: 3 };
+    items.sort((a, b) => rank[a[0]] - rank[b[0]]);
+    return { items, listening: false };
+  }
+  const PILL = { bad: 'Fix', warn: 'Check', info: 'Note', good: 'Good' };
+  function renderCoach() {
+    const { items, listening } = coachItems();
+    const list = $('#coach');
+    let html = items.map(([k, t]) => `<li>${pill([k, PILL[k]])}<span>${t}</span></li>`).join('');
+    if (listening) html += `<li>${pill(['info', 'Riding'])}<span>Watching one full lap before judging the damping…</span></li>`;
+    list.innerHTML = html;
+    const top = items[0] || ['info', 'Riding'];
+    $('#coach-top').innerHTML = listening && !items.length ? `${pill(['info', 'Riding'])}<span>Watching one full lap…</span>` : `${pill([top[0], PILL[top[0]]])}<span>${top[1]}</span>`;
+  }
+
+  function finishLap() {
+    lab.lapSum = lab.sim.summary();
+    lab.sim.newStats(); lab.statsStart = lab.sim.x;
+    const sc = lab.scene;
+    if (sc.check && sc.check(lab.lapSum, sagOf(lab.set)) && !solved.has(sc.id)) {
+      solved.add(sc.id);
+      try { localStorage.setItem('egod-susp-solved', JSON.stringify([...solved])); } catch (e) { /* storage unavailable */ }
+      renderScenes();
+    }
+    renderCoach(); renderBrief();
+  }
+
+  // stage buttons
+  const toggle = (id, key) => { const b = $(id); b.addEventListener('click', () => { lab[key] = !lab[key]; b.setAttribute('aria-pressed', lab[key]); }); };
+  toggle('#lab-slow', 'slow'); toggle('#lab-xray', 'xray'); toggle('#lab-pause', 'paused');
+
+  // HUD
+  const hud = { sag: $('#hud-sag'), travel: $('#hud-travel'), bottom: $('#hud-bottom'), jolt: $('#hud-jolt') };
+  let hudTick = 0;
+  function paintHud() {
+    const run = lab.sim.summary(), s = lab.lapSum;
+    const sg = sagOf(lab.set);
+    const used = Math.max(run.maxF, run.maxR, s ? Math.max(s.maxF, s.maxR) : 0);
+    const bottoms = Math.max(run.bottoms, s ? s.bottoms : 0);
+    const jolt = Math.max(run.jolt, s ? s.jolt : 0);
+    hud.sag.textContent = `${mm(sg.race)} mm`;
+    hud.travel.textContent = `${Math.round(Math.min(1, used) * 100)}%`;
+    hud.bottom.textContent = bottoms; hud.bottom.style.color = bottoms ? COL.bad : '';
+    hud.jolt.textContent = `${jolt.toFixed(1)} g`;
+  }
+
+  // telemetry
+  const teleCv = $('#tele'), tctx = teleCv.getContext('2d');
+  function drawTele() {
+    const { W, H } = fit(teleCv);
+    const dpr = W / teleCv.getBoundingClientRect().width;
+    tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.clearRect(0, 0, W, H);
+    const tNow = lab.sim.t, span = 8;
+    const l = 8 * dpr, r = W - 8 * dpr, tp = 10 * dpr, b = H - 10 * dpr;
+    const X = (t) => r - ((tNow - t) / span) * (r - l), Y = (f) => b - clamp(f, 0, 1.04) * (b - tp);
+    tctx.strokeStyle = 'rgba(232,220,198,0.07)'; tctx.lineWidth = 1;
+    for (const f of [0.25, 0.5, 0.75]) { tctx.beginPath(); tctx.moveTo(l, Y(f)); tctx.lineTo(r, Y(f)); tctx.stroke(); }
+    tctx.strokeStyle = COL.bad; tctx.globalAlpha = 0.7; tctx.beginPath(); tctx.moveTo(l, Y(1)); tctx.lineTo(r, Y(1)); tctx.stroke(); tctx.globalAlpha = 1;
+    const sg = lab.sim.sagFrac;
+    tctx.setLineDash([4 * dpr, 4 * dpr]); tctx.strokeStyle = 'rgba(94,164,232,0.55)'; tctx.beginPath(); tctx.moveTo(l, Y(sg)); tctx.lineTo(r, Y(sg)); tctx.stroke(); tctx.setLineDash([]);
+    tctx.font = `${10 * dpr}px JetBrains Mono, monospace`; tctx.fillStyle = COL.dim; tctx.textAlign = 'left'; tctx.textBaseline = 'bottom';
+    tctx.fillText('sag', l + 2 * dpr, Y(sg) - 2 * dpr);
+    tctx.fillStyle = COL.bad; tctx.fillText('bottom', l + 2 * dpr, Y(1) + 12 * dpr);
+    for (const [k, col, w] of [[1, COL.gold, 1.6], [2, COL.blue, 2.2]]) {
+      tctx.beginPath(); let started = false;
+      for (const p of lab.tele) { if (tNow - p[0] > span) continue; const x = X(p[0]), y = Y(p[k]); if (!started) { tctx.moveTo(x, y); started = true; } else tctx.lineTo(x, y); }
+      tctx.strokeStyle = col; tctx.lineWidth = w * dpr; tctx.stroke();
+    }
+    for (const f of lab.flashes) {
+      if (tNow - f.t > span) continue;
+      tctx.fillStyle = f.type === 'bottom' ? COL.bad : COL.warn;
+      tctx.beginPath(); tctx.arc(X(f.t), f.type === 'bottom' ? Y(1) : Y(0.02), 4 * dpr, 0, TAU); tctx.fill();
+    }
+  }
+
+  // the stage
+  {
+    const cv = $('#labc'), ctx = cv.getContext('2d');
+    const popups = [];
+    addView({ el: cv, frame(dt) {
+      const { W, H } = fit(cv);
+      const sim = lab.sim, cam = lab.cam;
+      const ts = lab.paused ? 0 : lab.slow ? 0.22 : 1;
+      if (ts > 0) {
+        stepSim(sim, dt, ts);
+        if (sim.x - lab.statsStart >= sim.track.P) finishLap();
+        lab.tele.push([sim.t, sim.sf / GEO.travelF, sim.sr / GEO.travelR]);
+        while (lab.tele.length && sim.t - lab.tele[0][0] > 9) lab.tele.shift();
+        for (const e of sim.events) {
+          lab.flashes.push(e);
+          if (e.type === 'bottom') { lab.shake.v = Math.max(lab.shake.v, 1); popups.push({ text: 'BOTTOMED', col: COL.bad, t: 0, end: e.end }); }
+          if (e.type === 'kick') popups.push({ text: 'KICK', col: COL.warn, t: 0, end: 'rear' });
+          if (e.type === 'bottom') lab.dust.emit(e.end === 'rear' ? sim.xr : sim.xf, P.terrain(sim.track, sim.x) + 0.05, 14, 3.5, 0.5);
+        }
+        sim.events.length = 0;
+        while (lab.flashes.length > 40) lab.flashes.shift();
+      }
+      const narrow = W / (window.devicePixelRatio || 1) < 640;
+      const span = narrow ? 4.6 : 6.6;
+      const air = sim.airborne ? 1 : 0;
+      cam.zoom = lerp(cam.zoom ?? 1, 1 + air * 0.18, Math.min(1, dt * 2));
+      cam.scale = W / (span * cam.zoom); cam.ax = narrow ? 0.45 : 0.42; cam.ay = narrow ? 0.4 : 0.46;
+      followCam(cam, sim, ts ? dt : 0, 0.6, 0.15);
+      const sc = rideScene(ctx, W, H, sim, cam, lab.dust, { xray: lab.xray, horizon: 0.56, shake: lab.shake }, ts ? dt * ts : 0);
+      // pop-up labels
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      const dpr = W / cv.getBoundingClientRect().width;
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const p = popups[i]; p.t += dt;
+        if (p.t > 1.4) { popups.splice(i, 1); continue; }
+        const wx = p.end === 'rear' ? sim.xr : sim.xf, wy = (p.end === 'rear' ? sim.yr : sim.yf) + 0.75;
+        const [x, y] = toScreen(sc, W, H, wx, wy);
+        ctx.globalAlpha = Math.min(1, (1.4 - p.t) * 2);
+        ctx.font = `800 ${15 * dpr}px Archivo, sans-serif`; ctx.textAlign = 'center';
+        ctx.fillStyle = p.col; ctx.fillText(p.text, x, y - p.t * 18 * dpr);
+        ctx.globalAlpha = 1;
+      }
+      // slow-mo letterbox
+      lab.lb = lerp(lab.lb || 0, lab.slow ? 1 : 0, Math.min(1, dt * 5));
+      if (lab.lb > 0.01) { ctx.fillStyle = '#000'; const h = H * 0.07 * lab.lb; ctx.fillRect(0, 0, W, h); ctx.fillRect(0, H - h, W, h); }
+      drawTele();
+      if ((hudTick += dt) > 0.2) { hudTick = 0; paintHud(); }
+    } });
+  }
+
+  renderScenes();
+  loadScene(SCENES[0], false);
+
+  // ---------------------------------------------------------------- cheat sheet
+  {
+    const rows = [
+      ['Sits low, front feels light, runs out of travel', 'Too much sag', 'Add preload. If static sag drops under 30 mm, go up a spring rate.', 'heavy'],
+      ['Clanks on big landings', 'Bottoming', 'Add 2 clicks of compression. Still clanking with sag right? Stiffer spring.', 'landing'],
+      ['Sinks lower and lower in whoops or braking bumps', 'Packing: rebound too slow', 'Open rebound 2–3 clicks so it recovers between bumps.', 'whoops'],
+      ['Every rock and root goes into your hands', 'Compression too firm', 'Soften compression 2 clicks at a time.', 'rocks'],
+      ['Rear kicks up after a hit, bike bucks', 'Rebound too fast', 'Close rebound 2 clicks.', 'pogo'],
+    ];
+    const host = $('#sheet');
+    host.innerHTML = rows.map(([sym, cause, fix, id]) => `<div class="sheet-row"><div><b>${sym}</b><span>${cause}</span></div><p class="fix">${fix}</p><button class="btn small" type="button" data-scene="${id}">Try it</button></div>`).join('');
+    host.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-scene]'); if (!b) return;
+      loadScene(SCENES.find((s) => s.id === b.dataset.scene), true);
+    });
+  }
+
+  requestAnimationFrame(loop);
+})();
+
+</script>
+</body>
+</html>
