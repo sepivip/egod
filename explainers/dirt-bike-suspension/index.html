@@ -177,9 +177,9 @@
     display: grid; gap: 8px;
   }
   .tabs { display: none; }
-  .scope { position: relative; height: 34px; border-radius: 10px; background: var(--bezel); border: 1px solid var(--line); overflow: hidden; }
+  .scope { position: relative; height: clamp(58px, 9vh, 96px); border-radius: 10px; background: var(--bezel); border: 1px solid var(--line); overflow: hidden; }
   .scope canvas { width: 100%; height: 100%; display: block; }
-  .scope .legend { position: absolute; right: 10px; top: 6px; display: flex; gap: 12px; font-family: var(--data); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); pointer-events: none; }
+  .scope .legend { position: absolute; right: 10px; top: 7px; display: flex; gap: 14px; font-family: var(--data); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); pointer-events: none; }
   .scope .legend span::before { content: ''; display: inline-block; width: 10px; height: 2px; margin-right: 5px; vertical-align: middle; background: currentColor; }
   .scope .legend .f { color: var(--gold); } .scope .legend .r { color: var(--blue); }
   .mods { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.25fr) minmax(0, 1.12fr) minmax(0, 1.9fr); gap: 8px; }
@@ -1518,30 +1518,55 @@ const board = (() => {
   return { tex };
 })();
 
-// drop hoist: a jib crane reaching over the lane
+// drop hoist: a jib crane reaching over the lane. Its trolley runs out along the arm for a drop test and parks back
+// towards the post otherwise, so a rider in the air on the jump never meets the rigging.
 const hoist = (() => {
   const g = new THREE.Group(); scene.add(g);
-  const PX = 1.8, PZ = -2.4, AY = FLOOR_Y + 3.75;
-  const post = box(0.18, 3.9, 0.18, M.paint); post.position.set(PX, FLOOR_Y + 1.95, PZ); g.add(post);
+  const PX = 1.8, PZ = -2.4, AY = FLOOR_Y + 4.15, EX = -0.2, EZ = 0.2;
+  const post = box(0.18, 4.3, 0.18, M.paint); post.position.set(PX, FLOOR_Y + 2.15, PZ); g.add(post);
   const foot = box(0.7, 0.08, 0.7, M.steel); foot.position.set(PX, FLOOR_Y + 0.04, PZ); g.add(foot);
-  const arm = span(rod(0.075, M.paint, 12), [PX, AY, PZ], [-0.2, AY, 0.2]); g.add(arm);
-  const brace = span(rod(0.03, M.paint), [PX, FLOOR_Y + 2.8, PZ], [PX * 0.45, AY - 0.05, PZ * 0.45]); g.add(brace);
-  const trolley = box(0.22, 0.14, 0.24, M.steel); trolley.position.set(0, FLOOR_Y + 3.6, 0); g.add(trolley);
+  const arm = span(rod(0.075, M.paint, 12), [PX, AY, PZ], [EX, AY, EZ]); g.add(arm);
+  const brace = span(rod(0.03, M.paint), [PX, FLOOR_Y + 3.2, PZ], [PX * 0.45, AY - 0.05, PZ * 0.45]); g.add(brace);
+  const along = (t) => [EX + (PX - EX) * t, EZ + (PZ - EZ) * t]; // a point on the arm, 0 at its tip, 1 at the post
+  const T_DROP = -EX / (PX - EX), T_PARK = 0.62; // over the bike, and well clear of the lane
+  const trolley = box(0.22, 0.14, 0.24, M.steel); trolley.rotation.y = Math.atan2(PX - EX, PZ - EZ); g.add(trolley);
   const chain = rod(0.012, M.chrome, 6); g.add(chain);
   const hook = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 8, 16, Math.PI * 1.5), M.chrome); g.add(hook);
-  const strap = rod(0.01, std('#d29a35', 0.7)); g.add(strap);
+  // A spreader beam rides above the rider's helmet and two straps run from its ends down to the bike: the front one to
+  // the handlebar clamp, angled out ahead of the helmet, the rear one to the subframe behind the seat. Nothing passes
+  // through the rider, and the chassis hangs from both ends so the suspension drops to full extension.
+  const BEAM_Y = 1.62, BEAM_X = 0.95, FRONT = [0.36, 0.57], REAR = [-0.66, 0.4];
+  const beam = new THREE.Group(); g.add(beam);
+  beam.add(box(BEAM_X * 2 + 0.08, 0.07, 0.06, M.paint));
+  for (const s of [-1, 1]) { const lug = box(0.05, 0.05, 0.075, M.steel); lug.position.set(s * BEAM_X, -0.045, 0); beam.add(lug); }
+  const eye = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 8, 16), M.steel); eye.position.y = 0.065; beam.add(eye);
+  const web = std('#d29a35', 0.75);
+  const straps = [0, 1].map(() => { const st = box(0.012, 1, 0.042, web); g.add(st); return st; });
+  const clips = [0, 1].map(() => { const c = box(0.03, 0.045, 0.05, M.steel); g.add(c); return c; });
   STATION_POS.hoist = new THREE.Vector3(1.8, FLOOR_Y + 2.5, -2.4);
   pickable(post, 'station', { key: 'hoist' }); pickable(arm, 'station', { key: 'hoist' });
-  let hy = FLOOR_Y + 3.0;
+  const TOP = AY - 0.16, REST = AY - 0.75; // trolley underside, and where the hook rests with nothing on it
+  let hy = REST, tt = T_PARK;
   return {
-    update(dt, attached, bikeTopY) {
-      const goal = attached ? bikeTopY + 0.32 : FLOOR_Y + 3.0;
-      hy = attached ? goal : lerp(hy, goal, Math.min(1, dt * 2.5));
-      const top = FLOOR_Y + 3.53;
-      span(chain, [0, top, 0], [0, hy + 0.05, 0], 1, 1);
-      hook.position.set(0, hy, 0); hook.rotation.set(0, Math.PI / 2, 0);
-      strap.visible = attached;
-      if (attached) span(strap, [0, hy - 0.04, 0], [0, bikeTopY, 0]);
+    update(dt, dropMode, attached, sim) {
+      const c = Math.cos(sim.th), sn = Math.sin(sim.th);
+      const W = (p) => [p[0] * c - p[1] * sn, sim.y + p[0] * sn + p[1] * c, 0]; // chassis frame to world
+      const k = Math.min(1, dt * 2.5);
+      tt = attached ? T_DROP : lerp(tt, dropMode ? T_DROP : T_PARK, Math.min(1, dt * 1.2));
+      hy = attached ? W([0, BEAM_Y])[1] + 0.12 : lerp(hy, REST, k);
+      const [tx, tz] = along(tt);
+      trolley.position.set(tx, AY - 0.08, tz);
+      span(chain, [tx, TOP, tz], [tx, hy + 0.05, tz], 1, 1);
+      hook.position.set(tx, hy, tz); hook.rotation.set(0, Math.PI / 2, 0);
+      beam.position.set(tx, hy - 0.12, tz); beam.rotation.z = attached ? sim.th : 0;
+      for (let i = 0; i < 2; i++) {
+        const end = [(i ? -1 : 1) * BEAM_X, BEAM_Y - 0.07], tip = i ? REAR : FRONT;
+        const e = attached ? W(end) : [tx + end[0], hy - 0.19, tz];
+        const t = attached ? W(tip) : [e[0] + (i ? 0.04 : -0.04), e[1] - 0.3, tz];
+        if (attached) { e[2] = tz; }
+        span(straps[i], e, t);
+        clips[i].position.set(t[0], t[1] + 0.02, t[2]); clips[i].quaternion.copy(straps[i].quaternion);
+      }
     },
   };
 })();
@@ -1804,142 +1829,181 @@ RD.jerseyBody = fabric(torsoTex, torsoBump);
 RD.sleeve = fabric(sleeveTex, sleeveBump);
 RD.pantsLeg = fabric(pantsTex, pantsBump);
 // ---- helmet -------------------------------------------------------------------------------------------------
-// One function describes the shell. The painted lid, its rubber trims, the peak's mounting edge and the goggle strap
-// are all built on it. Directions are (az, el): az 0 straight ahead and positive towards +z, el 0 at eye level.
-const HELM = { r: 0.142, pa: 0.82, pe0: 0.05, pe: 0.31 };
-const helmPortD = (az, el) => Math.pow((Math.abs(az) / HELM.pa) ** 4 + (Math.abs(el - HELM.pe0) / HELM.pe) ** 4, 0.25);
-const helmEdge = (az) => -0.76 + 0.06 * Math.sin(az) ** 2; // sin(el) of the bottom edge: a little higher over the ears
-function helmPoint(az, el, recess = true) {
-  const r = HELM.r, ss = THREE.MathUtils.smoothstep, nb = helmEdge(az), sb = Math.sin(el);
-  const shape = (s, c) => {
-    const down = -s, nx = c * Math.cos(az), nz = c * Math.sin(az);
-    // chin bar: the lower front pulled forward and down into a beak with a ridge down the middle
-    const w = ss(down, 0.24, 0.62) * Math.pow(Math.max(0, 1 - Math.abs(az) / 1.05), 1.3);
-    // the lower back edge kicks out a little
-    const flare = ss(down, 0.38, 0.76) * Math.max(0, -Math.cos(az)) * 0.011;
-    return [(1.1 * r + flare) * nx + w * 0.088, r * s - w * 0.03, (0.95 * r + flare) * nz * (1 - 0.22 * w)];
+// Drawn the way helmet designers draw one: a side profile (the outline S, head centre at the origin, x forward),
+// a width that narrows into the chin bar, and a cross-section that is round over the crown and flat-sided low down.
+// Directions on the unit sphere (az, el) map onto that shape: az 0 straight ahead and positive towards +z, el 0 at
+// eye level. The shell, its trims, the peak, the goggles and the paint are all placed in those directions.
+const HELM = (() => {
+  const S = [[0.152, 0.035], [0.141, 0.08], [0.113, 0.116], [0.06, 0.139], [0, 0.147], [-0.06, 0.141], [-0.11, 0.12], [-0.146, 0.077],
+    [-0.163, 0.015], [-0.161, -0.05], [-0.151, -0.095], [-0.138, -0.12], [-0.09, -0.13], [0, -0.143], [0.09, -0.16], [0.158, -0.178],
+    [0.196, -0.173], [0.207, -0.128], [0.183, -0.09], [0.161, -0.06], [0.152, -0.045]];
+  const curve = new THREE.CatmullRomCurve3(S.map(([x, y]) => new THREE.Vector3(x, y, 0)), true, 'centripetal');
+  const pts = curve.getSpacedPoints(1600).slice(0, -1).map((p) => [Math.atan2(p.y, p.x), Math.hypot(p.x, p.y)]).sort((a, b) => a[0] - b[0]);
+  const A = Float64Array.from(pts, (p) => p[0]), R = Float64Array.from(pts, (p) => p[1]), n = A.length;
+  // radius of the profile along a ray at angle t from the head centre
+  const rho = (t) => {
+    if (t < A[0] || t >= A[n - 1]) { const a0 = A[n - 1] - (t < A[0] ? TAU : 0), a1 = A[0] + (t < A[0] ? 0 : TAU); return R[n - 1] + ((R[0] - R[n - 1]) * (t - a0)) / (a1 - a0); }
+    let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (A[m] <= t) lo = m; else hi = m; }
+    return R[lo] + ((R[hi] - R[lo]) * (t - A[lo])) / (A[hi] - A[lo] || 1);
   };
-  let p;
-  if (sb >= nb) p = shape(sb, Math.cos(el));
-  else { // below the edge: a shallow dish closes the underside
-    const cb = Math.sqrt(1 - nb * nb), e = shape(nb, cb), f = Math.cos(el) / cb;
-    p = [e[0] * f, e[1] - (1 - f) * r * 0.06, e[2] * f];
-  }
-  if (recess) { const k = 1 - 0.1 * (1 - ss(helmPortD(az, el), 0.88, 1.0)); p[0] *= k; p[1] *= k; p[2] *= k; } // the eye port
-  return p;
+  return { rho, W0: 0.137, pa: 0.8, pe0: -0.03, pe: 0.25, rim: -0.84 };
+})();
+const helmPortD = (az, el) => Math.pow((Math.abs(az) / HELM.pa) ** 4 + (Math.abs(el - HELM.pe0) / HELM.pe) ** 4, 0.25);
+function helmPoint(az, el, recess = true) {
+  const ce = Math.cos(el), nx = ce * Math.cos(az), ny = Math.sin(el), nz = ce * Math.sin(az);
+  const c = Math.hypot(nx, ny), th = Math.atan2(ny, nx), e = 2 / (2.6 - 0.4 * Math.sin(th)); // round on top, boxier underneath
+  const cp = Math.pow(c, e), zp = Math.sign(nz) * Math.pow(Math.abs(nz), e);
+  const chin = Math.abs(th + 0.66) < 0.4 ? 0.5 + 0.5 * Math.cos((Math.PI * (th + 0.66)) / 0.4) : 0; // the chin bar narrows to a beak
+  const W = HELM.W0 - 0.045 * chin * c * c, r = HELM.rho(th);
+  let x = Math.cos(th) * cp * r, z = zp * W;
+  const y = Math.sin(th) * cp * r;
+  if (recess) { const k = 1 - 0.13 * (1 - THREE.MathUtils.smoothstep(helmPortD(az, el), 0.86, 1)); x *= k; z *= k; } // the eye port
+  return [x, y, z];
+}
+// the point on the (un-recessed) shell in direction az at height y
+function helmAt(az, y) {
+  let lo = -1.35, hi = 1.35;
+  for (let i = 0; i < 28; i++) { const m = (lo + hi) / 2; if (helmPoint(az, m, false)[1] < y) lo = m; else hi = m; }
+  return helmPoint(az, (lo + hi) / 2, false);
+}
+function helmNormal(az, el) {
+  const d = 1e-3, a = helmPoint(az + d, el, false), b = helmPoint(az - d, el, false), c = helmPoint(az, el + d, false), e = helmPoint(az, el - d, false);
+  return new THREE.Vector3(c[0] - e[0], c[1] - e[1], c[2] - e[2]).cross(new THREE.Vector3(a[0] - b[0], a[1] - b[1], a[2] - b[2])).normalize();
 }
 const HELM_GEO = (() => {
   const G = {};
   { // shell
-    const g = new THREE.SphereGeometry(1, 120, 72), p = g.attributes.position, uv = g.attributes.uv;
-    for (let i = 0; i < p.count; i++) p.setXYZ(i, ...helmPoint(Math.PI - uv.getX(i) * TAU, Math.asin(clamp(p.getY(i), -1, 1))));
-    G.shell = toCreasedNormals(g, Math.PI / 2.8);
+    const g = new THREE.SphereGeometry(1, 128, 80), p = g.attributes.position, uv = g.attributes.uv;
+    for (let i = 0; i < p.count; i++) p.setXYZ(i, ...helmPoint((0.5 - uv.getX(i)) * TAU, Math.asin(clamp(p.getY(i), -1, 1))));
+    G.shell = toCreasedNormals(g, Math.PI / 3.2);
   }
   // rubber trims round the eye port and the bottom edge
   const sq = (v) => Math.sign(v) * Math.sqrt(Math.abs(v));
   const loop = (n, f) => new THREE.CatmullRomCurve3(Array.from({ length: n }, (_, i) => new THREE.Vector3(...f((i / n) * TAU))), true);
-  G.portTrim = new THREE.TubeGeometry(loop(96, (t) => helmPoint(0.975 * HELM.pa * sq(Math.cos(t)), HELM.pe0 + 0.975 * HELM.pe * sq(Math.sin(t)))), 200, 0.0055, 8, true);
-  G.edgeTrim = new THREE.TubeGeometry(loop(120, (a) => helmPoint(a, Math.asin(helmEdge(a)), false)), 200, 0.0075, 8, true);
-  // peak: its back edge follows the brow, it reaches furthest in the middle, fans out and tips up a little
+  G.portTrim = new THREE.TubeGeometry(loop(96, (t) => helmPoint(0.975 * HELM.pa * sq(Math.cos(t)), HELM.pe0 + 0.975 * HELM.pe * sq(Math.sin(t)))), 200, 0.006, 8, true);
+  G.edgeTrim = new THREE.TubeGeometry(loop(140, (a) => helmPoint(a, HELM.rim, false)), 240, 0.011, 10, true);
+  // peak: a broad angular visor. Its back edge wraps the forehead down to the temples, it reaches furthest in the
+  // middle to a blunt point, and it slopes down towards the tip like the photo's
   G.peakPt = (u, v, t) => {
-    const az = u * 0.98, b = helmPoint(az, 0.43 - 0.2 * u * u, false), d = v * (0.025 + 0.12 * (1 - Math.abs(u) ** 2.2)), da = 0.4 * az;
-    return [b[0] * 0.96 + Math.cos(da) * d, b[1] * 0.96 + d * 0.17 + t * (0.0075 - 0.0025 * v), b[2] * 0.96 + Math.sin(da) * d];
+    const az = u * 1.16, b = helmPoint(az, 0.56 - 0.5 * u * u, false), L = 0.03 + 0.15 * Math.pow(1 - u * u, 0.85) * (1 - 0.22 * Math.abs(u)), d = v * L, da = 0.55 * az;
+    return [b[0] * 0.975 + Math.cos(da) * d, b[1] * 0.975 - d * 0.2 - 0.012 * u * u * v + 0.006 * (1 - Math.abs(u)) * v + t * (0.013 - 0.008 * v), b[2] * 0.975 + Math.sin(da) * d];
   };
   {
-    const g = new THREE.BoxGeometry(1, 1, 1, 24, 1, 32), p = g.attributes.position;
+    const g = new THREE.BoxGeometry(1, 1, 1, 24, 1, 36), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) p.setXYZ(i, ...G.peakPt(p.getZ(i) * 2, p.getX(i) + 0.5, p.getY(i) + 0.5));
     g.computeVertexNormals(); G.peak = g;
   }
+  // the peak's mounts: a raised triangular pod on each temple with a big screw knob
+  G.pods = [-1, 1].map((s) => {
+    const az = s * 1.2, el = 0.16, P = helmPoint(az, el, false), N = helmNormal(az, el);
+    const B = new THREE.Vector3(0, 1, 0).addScaledVector(N, -N.y).normalize(), T = new THREE.Vector3().crossVectors(B, N);
+    return { pos: new THREE.Vector3(...P), quat: new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(T, B, N)), fwd: Math.sign(T.x) };
+  });
+  G.pod = (fwd) => {
+    const f = fwd;
+    const sh = pathShape(['M', -0.038 * f, -0.022, 'L', 0.03 * f, -0.006, 'Q', 0.04 * f, 0.0, 0.03 * f, 0.008, 'L', -0.03 * f, 0.03, 'Q', -0.042 * f, 0.032, -0.042 * f, 0.02, 'Z']);
+    return new THREE.ExtrudeGeometry(sh, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.003, bevelSegments: 2, curveSegments: 8 });
+  };
+  G.knob = new THREE.CylinderGeometry(0.012, 0.013, 0.008, 20);
   // goggles: a foam-backed frame that fills the eye port, with a nose cut-out, and a mirrored lens on its face
   const slab = (a0, top, bot, notch, k0, k1) => {
     const g = new THREE.BoxGeometry(1, 1, 1, 40, 6, 1), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) {
       const a = -p.getX(i) * 2 * a0, s = p.getY(i) + 0.5, k = k0 + (p.getZ(i) + 0.5) * (k1 - k0);
       const end = Math.max(0, (Math.abs(a) - a0 * 0.75) / (a0 * 0.25)) ** 2;
-      const yt = top - 0.014 * end, yb = bot + 0.012 * end + notch * Math.exp(-((a / 0.14) ** 2));
-      p.setXYZ(i, 0.156 * k * Math.cos(a), yb + (yt - yb) * s, 0.1349 * k * Math.sin(a));
+      const yt = top - 0.012 * end, yb = bot + 0.012 * end + notch * Math.exp(-((a / 0.14) ** 2));
+      const y = yb + (yt - yb) * s, q = helmAt(a, y);
+      p.setXYZ(i, q[0] * k, y, q[2] * k);
     }
     g.computeVertexNormals(); return g;
   };
-  G.frame = slab(0.77, 0.044, -0.03, 0.02, 0.9, 1.035);
-  G.lens = slab(0.68, 0.037, -0.023, 0.018, 1.03, 1.046);
+  G.frame = slab(0.77, 0.03, -0.041, 0.02, 0.88, 1.04);
+  G.lens = slab(0.66, 0.024, -0.035, 0.018, 1.035, 1.052);
   { // strap: round the back of the shell at goggle height
     const a0 = 0.74, span = TAU - 2 * a0, g = new THREE.BoxGeometry(1, 1, 1, 72, 1, 1), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) {
-      const a = Math.PI - p.getX(i) * span, y = 0.007 + p.getY(i) * 0.036, off = 0.004 + (p.getZ(i) + 0.5) * 0.003;
-      const b = helmPoint(a, Math.asin(y / HELM.r), false), rr = Math.hypot(b[0], b[2]);
+      const a = Math.PI - p.getX(i) * span, y = -0.006 + p.getY(i) * 0.034, off = 0.004 + (p.getZ(i) + 0.5) * 0.003;
+      const b = helmAt(a, y), rr = Math.hypot(b[0], b[2]);
       p.setXYZ(i, b[0] * (1 + off / rr), y, b[2] * (1 + off / rr));
     }
     g.computeVertexNormals(); G.strap = g;
   }
-  G.screw = new THREE.CylinderGeometry(0.0065, 0.0065, 0.005, 14);
   return G;
 })();
 const helmetTex = canvasTex(1024, 512, (c, W, H) => {
-  // the shell's UVs are its (az, el) directions: u = 0.5 straight ahead, the canvas top the crown
-  const X = (az) => (0.5 - az / TAU) * W, Y = (el) => (0.5 - el / Math.PI) * H;
-  const path = (pts) => { c.beginPath(); pts.forEach(([a, e], i) => (i ? c.lineTo(X(a), Y(e)) : c.moveTo(X(a), Y(e)))); };
-  const poly = (pts, col) => { path(pts); c.closePath(); c.fillStyle = col; c.fill(); };
-  const line = (pts, col, w) => { path(pts); c.strokeStyle = col; c.lineWidth = w; c.lineJoin = c.lineCap = 'round'; c.stroke(); };
-  c.fillStyle = KIT.white; c.fillRect(0, 0, W, H);
-  for (const s of [-1, 1]) {
-    // a charcoal panel sweeping up the lower back of the shell, edged in gold
-    poly([[s * 1.2, -1.3], [s * 1.25, -0.6], [s * 1.6, -0.18], [s * 2.2, 0.12], [s * 2.8, 0.2], [s * Math.PI, 0.2], [s * Math.PI, -1.3]], KIT.char);
-    line([[s * 1.1, -0.68], [s * 1.5, -0.12], [s * 2.15, 0.22], [s * 2.8, 0.3], [s * Math.PI, 0.3]], KIT.gold, H * 0.014);
-    // gold flash on each side of the chin bar
-    poly([[s * 0.36, -0.76], [s * 0.6, -0.38], [s * 0.76, -0.38], [s * 0.52, -0.76]], KIT.gold);
+  // Paint is designed on the side view, the way the photo's is: every texel finds its point on the shell and takes its
+  // colour from where that point sits in side view (x forward, y up), so stripes run on over the crown by themselves.
+  // Text goes on through a side-view decal, mirrored for the left so it reads the right way round on both sides.
+  const D = 512, X0 = -0.21, Y1 = 0.19, SC = 0.46 / D;
+  const decal = (mirror) => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = D; const d = cv.getContext('2d');
+    const txt = (s, x, y, h, col, wt = 900) => {
+      d.save(); d.translate((x - X0) / SC, (Y1 - y) / SC); if (mirror) d.scale(-1, 1);
+      d.font = `${wt} ${h / SC}px ${SANS}`; d.textAlign = 'center'; d.textBaseline = 'middle'; d.fillStyle = col; d.fillText(s, 0, 0); d.restore();
+    };
+    txt('01', -0.104, -0.074, 0.058, KIT.white);
+    txt('EGOD', 0.072, -0.068, 0.018, KIT.char, 800);
+    return d.getImageData(0, 0, D, D).data;
+  };
+  const right = decal(false), left = decal(true);
+  const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const WHITE = hex(KIT.white), CHAR = hex(KIT.char), GOLD = hex(KIT.gold), GREY = hex('#5a5d64'), DARKG = hex('#45484f');
+  const DEEP = hex(KIT.deep), PORT = hex('#0d0e10'), GRILLE = hex('#3a3c42'), SLAT = hex('#1c1d21'), SEAM = hex('#b9b5ab');
+  const img = c.createImageData(W, H), px = img.data;
+  for (let j = 0; j < H; j++) {
+    const el = (0.5 - (j + 0.5) / H) * Math.PI;
+    for (let i = 0; i < W; i++) {
+      const az = (0.5 - (i + 0.5) / W) * TAU;
+      let col;
+      if (el < HELM.rim + 0.01) col = DEEP;
+      else if (helmPortD(az, el) < 1) col = PORT;
+      else {
+        const [x, y, z] = helmPoint(az, el, false), side = Math.abs(Math.sin(az) * Math.cos(el));
+        const s = x - 0.3 * y - 0.035; // across the slanted stripe
+        const front = x > 0.15 && Math.abs(z) < 0.07; // the face of the chin bar
+        const mouth = front && y < -0.098 && y > -0.146 ? Math.max(Math.abs(z) / (0.03 + 0.12 * (y + 0.146)), (Math.abs(y + 0.122) / 0.024)) : 2;
+        const slot = (x - 0.45 * (y + 0.12) - 0.092) / 0.013; // across the chin's side vents
+        if (x > 0.17 && y < -0.15) col = DEEP; // the chin's lower vent
+        else if (mouth < 1) col = mouth > 0.86 ? CHAR : (((y * 1000) % 7) + 7) % 7 < 2.6 ? SLAT : GRILLE; // mouth vent, slats behind a rim
+        else if (side > 0.3 && y < -0.104 && y > -0.142 && slot > 0 && slot < 4 && slot % 1 < 0.5) col = DEEP; // chin side vents
+        else if (s > -0.012 && s < 0.012) col = GOLD;
+        else if (s > -0.046 && s <= -0.012) col = CHAR;
+        else if (s <= -0.046) col = y < -0.07 + 0.35 * (x + 0.16) ? DARKG : GREY;
+        else col = WHITE;
+        if (side > 0.45 && x < 0.1 && x > -0.15 && Math.abs(y - (0.083 - 0.12 * x)) < 0.0016 && s < -0.046) col = SEAM; // shell seam
+        if (side > 0.4) { // decals
+          const di = Math.round((x - X0) / SC), dj = Math.round((Y1 - y) / SC);
+          if (di >= 0 && di < D && dj >= 0 && dj < D) {
+            const dd = z > 0 ? right : left, q = (dj * D + di) * 4, a = dd[q + 3] / 255;
+            if (a > 0) col = [col[0] + (dd[q] - col[0]) * a, col[1] + (dd[q + 1] - col[1]) * a, col[2] + (dd[q + 2] - col[2]) * a];
+          }
+        }
+      }
+      const q = (j * W + i) * 4; px[q] = col[0]; px[q + 1] = col[1]; px[q + 2] = col[2]; px[q + 3] = 255;
+    }
   }
-  // a gold stripe with a charcoal pinstripe over the crown, the same width all the way over
-  for (let y = 0; y < H; y++) {
-    const el = (0.5 - (y + 0.5) / H) * Math.PI, ce = Math.max(0.01, Math.cos(el));
-    const bar = (az0, m, col) => { const h = Math.min(Math.PI, m / (HELM.r * ce)); c.fillStyle = col; c.fillRect(X(az0 + h), y, X(az0 - h) - X(az0 + h), 1.5); };
-    const at = el > 0.42 ? [0, Math.PI, -Math.PI] : el > -0.5 ? [Math.PI, -Math.PI] : [];
-    for (const a of at) { bar(a, 0.026, KIT.gold); bar(a, 0.005, KIT.char); }
-  }
-  // eye port: the recess the goggles sit in
-  c.fillStyle = '#0e0f11'; c.beginPath();
-  for (let i = 0; i <= 96; i++) {
-    const t = (i / 96) * TAU, sq = (v) => Math.sign(v) * Math.sqrt(Math.abs(v));
-    const a = 0.99 * HELM.pa * sq(Math.cos(t)), e = HELM.pe0 + 0.99 * HELM.pe * sq(Math.sin(t));
-    i ? c.lineTo(X(a), Y(e)) : c.moveTo(X(a), Y(e));
-  }
-  c.fill();
-  // chin bar: a mouth vent with metal slats
-  c.fillStyle = '#26282d'; c.beginPath(); c.roundRect(X(0.17), Y(-0.35), X(-0.17) - X(0.17), Y(-0.62) - Y(-0.35), H * 0.012); c.fill();
-  for (let k = 0; k < 4; k++) line([[-0.13, -0.4 - k * 0.055], [0.13, -0.4 - k * 0.055]], '#9a9ea5', H * 0.008);
-  // underside
-  path([[-Math.PI, -1.6], ...Array.from({ length: 65 }, (_, i) => { const a = -Math.PI + (i / 64) * TAU; return [a, Math.asin(helmEdge(a))]; }), [Math.PI, -1.6]]); c.fillStyle = KIT.deep; c.fill();
-  // rider number high on each side, maker's mark on the charcoal panel
-  c.textAlign = 'center'; c.textBaseline = 'middle';
-  for (const s of [-1, 1]) {
-    c.fillStyle = KIT.char; c.font = `900 ${H * 0.1}px ${SANS}`; c.fillText('01', X(s * 1.8), Y(0.38));
-    c.fillStyle = KIT.white; c.font = `800 ${H * 0.05}px ${SANS}`; c.fillText('EGOD', X(s * 2.05), Y(-0.34));
-  }
+  c.putImageData(img, 0, 0);
 });
 TEXT_TEX.push(helmetTex);
 const peakTex = canvasTex(256, 256, (c, W, H) => {
   // u runs from the brow to the tip of the peak, v across it
   c.fillStyle = KIT.white; c.fillRect(0, 0, W, H);
-  c.fillStyle = KIT.gold; c.fillRect(0, H * 0.44, W * 0.86, H * 0.12);
-  c.fillStyle = KIT.char; c.fillRect(0, H * 0.49, W * 0.86, H * 0.02); c.fillRect(W * 0.88, 0, W * 0.12, H);
-  c.fillStyle = KIT.gold; c.fillRect(W * 0.855, 0, W * 0.015, H);
-  for (const y of [0.27, 0.65]) {
-    c.fillStyle = '#26282d'; c.beginPath(); c.roundRect(W * 0.12, H * y, W * 0.26, H * 0.08, H * 0.02); c.fill();
-    c.fillStyle = '#6b6e75'; for (let k = 1; k < 4; k++) c.fillRect(W * (0.12 + k * 0.065), H * y, W * 0.012, H * 0.08);
+  c.fillStyle = KIT.gold; c.fillRect(0, H * 0.485, W * 0.9, H * 0.03);
+  for (const y of [0.33, 0.6]) { // vent slots
+    c.fillStyle = '#26282d'; c.beginPath(); c.roundRect(W * 0.16, H * y, W * 0.3, H * 0.07, H * 0.03); c.fill();
   }
+  c.fillStyle = KIT.char; c.fillRect(W * 0.93, 0, W * 0.07, H);
 });
 const strapTex = canvasTex(256, 64, (c, W, H) => {
   c.fillStyle = KIT.char; c.fillRect(0, 0, W, H);
-  c.fillStyle = KIT.white; c.fillRect(0, H * 0.08, W, H * 0.06); c.fillRect(0, H * 0.86, W, H * 0.06);
-  c.fillStyle = KIT.gold;
-  for (let i = 0; i < 4; i++) { const x = W * (i + 0.5) / 4; c.beginPath(); c.moveTo(x - H * 0.3, H * 0.5); c.lineTo(x, H * 0.22); c.lineTo(x + H * 0.3, H * 0.5); c.lineTo(x, H * 0.78); c.fill(); }
+  c.fillStyle = KIT.gold; c.fillRect(0, H * 0.1, W, H * 0.07); c.fillRect(0, H * 0.83, W, H * 0.07);
 }, true);
 strapTex.repeat.set(9, 1);
-RD.helmet = phys('#ffffff', 0.25, 0, { map: helmetTex, clearcoat: 0.9, clearcoatRoughness: 0.12 });
-RD.helmetDark = phys('#1b1c20', 0.3, 0, { clearcoat: 0.8, clearcoatRoughness: 0.2 });
-RD.peakTop = phys('#ffffff', 0.25, 0, { map: peakTex, clearcoat: 0.9, clearcoatRoughness: 0.12 });
-RD.peakUnder = phys('#e4ddcf', 0.45, 0, { clearcoat: 0.4, clearcoatRoughness: 0.3 });
-RD.trim = std('#141416', 0.75);
+RD.helmet = phys('#ffffff', 0.55, 0, { map: helmetTex, clearcoat: 0.2, clearcoatRoughness: 0.5 });
+RD.helmetDark = phys('#1b1c20', 0.5, 0, { clearcoat: 0.2, clearcoatRoughness: 0.5 });
+RD.peakTop = phys('#ffffff', 0.55, 0, { map: peakTex, clearcoat: 0.2, clearcoatRoughness: 0.5 });
+RD.peakUnder = phys('#e6e0d3', 0.6, 0);
+RD.trim = std('#16171a', 0.8);
 RD.gstrap = std('#ffffff', 0.7, 0, { map: strapTex });
 
 const bike = (() => {
@@ -2397,9 +2461,12 @@ function buildRider() {
   // helmet (shapes shared by every rider, see HELM_GEO)
   const helmet = new THREE.Group(); g.add(helmet);
   helmet.add(mesh(HELM_GEO.shell, RD.helmet), mesh(HELM_GEO.portTrim, RD.trim), mesh(HELM_GEO.edgeTrim, RD.trim),
-    mesh(HELM_GEO.peak, [RD.shell, RD.shell, RD.peakTop, RD.peakUnder, RD.shell, RD.shell]),
+    mesh(HELM_GEO.peak, [RD.peakUnder, RD.peakUnder, RD.peakTop, RD.peakUnder, RD.peakUnder, RD.peakUnder]),
     mesh(HELM_GEO.frame, RD.goggle), mesh(HELM_GEO.lens, RD.lens), mesh(HELM_GEO.strap, RD.gstrap));
-  for (const u of [-0.8, 0, 0.8]) { const sc = mesh(HELM_GEO.screw, RD.buckle); sc.position.set(...HELM_GEO.peakPt(u, 0.16, 1)); helmet.add(sc); }
+  for (const pd of HELM_GEO.pods) {
+    const pod = mesh(HELM_GEO.pod(pd.fwd), RD.peakUnder); pod.position.copy(pd.pos); pod.quaternion.copy(pd.quat); helmet.add(pod);
+    const knob = mesh(HELM_GEO.knob, RD.helmetDark); knob.position.set(-0.004 * pd.fwd, 0.004, 0.013); knob.rotation.x = Math.PI / 2; pod.add(knob);
+  }
   const Z = new THREE.Vector3(0, 0, 1), bdir = new THREE.Vector3(), hx = new THREE.Vector3(), hy = new THREE.Vector3(), hz = new THREE.Vector3(), hm = new THREE.Matrix4();
   const place = (m, a, b, sx, sz = sx) => { aim(m, a, b); m.scale.set(sx, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), sz); };
   const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -2888,19 +2955,19 @@ function drawDial(cv, frac, peak, sagF, color, label, travel) {
 function drawScope(c, W, H, k, tele, flashes, sagF, tNow, span, big) {
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.fillStyle = big ? '#0b0d0c' : '#0f0e0b'; c.fillRect(0, 0, W, H);
-  const l = 8 * k, r = W - 8 * k, tp = (big ? 40 : 8) * k, b = H - (big ? 22 : 8) * k;
+  const l = 8 * k, r = W - 8 * k, tp = (big ? 40 : 10) * k, b = H - (big ? 22 : 12) * k;
   const X = (t) => r - ((tNow - t) / span) * (r - l), Y = (f) => b - clamp(f, 0, 1.04) * (b - tp);
   c.strokeStyle = 'rgba(232,220,198,0.07)'; c.lineWidth = 1 * k;
   for (const f of [0.25, 0.5, 0.75]) { c.beginPath(); c.moveTo(l, Y(f)); c.lineTo(r, Y(f)); c.stroke(); }
   c.strokeStyle = 'rgba(239,97,80,0.7)'; c.beginPath(); c.moveTo(l, Y(1)); c.lineTo(r, Y(1)); c.stroke();
   c.setLineDash([4 * k, 4 * k]); c.strokeStyle = 'rgba(94,164,232,0.55)'; c.beginPath(); c.moveTo(l, Y(sagF)); c.lineTo(r, Y(sagF)); c.stroke(); c.setLineDash([]);
-  c.font = `${(big ? 15 : 9.5) * k}px ${MONO}`; c.textAlign = 'left'; c.textBaseline = 'bottom';
+  c.font = `${(big ? 15 : 10.5) * k}px ${MONO}`; c.textAlign = 'left'; c.textBaseline = 'bottom';
   c.fillStyle = COL.dim; c.fillText('sag', l + (big ? 2 : 52) * k, Y(sagF) - 2 * k);
-  c.fillStyle = COL.bad; c.fillText('bottom', l + 2 * k, Y(1) + (big ? 18 : 11) * k);
+  c.fillStyle = COL.bad; c.fillText('bottom', l + 2 * k, Y(1) + (big ? 18 : 13) * k);
   for (const [i, col, w] of [[1, COL.gold, 1.6], [2, COL.blue, 2.2]]) {
     c.beginPath(); let started = false;
     for (const p of tele) { if (tNow - p[0] > span) continue; const x = X(p[0]), y = Y(p[i]); if (!started) { c.moveTo(x, y); started = true; } else c.lineTo(x, y); }
-    c.strokeStyle = col; c.lineWidth = w * k * (big ? 1.8 : 1); c.stroke();
+    c.strokeStyle = col; c.lineWidth = w * k * (big ? 1.8 : 1.15); c.stroke();
   }
   for (const f of flashes) { if (tNow - f.t > span) continue; c.fillStyle = f.type === 'bottom' ? COL.bad : COL.warn; c.beginPath(); c.arc(X(f.t), f.type === 'bottom' ? Y(1) : Y(0.02), (big ? 6 : 4) * k, 0, TAU); c.fill(); }
   if (big) {
@@ -3155,7 +3222,7 @@ function frame(now) {
   dust.update(dt * (ts || 0.0001));
   lane.update(sim.track, sim.x);
   parts = bike.update(sim);
-  hoist.update(dt, state.mode === 'drop' && state.drop.hold > 0, sim.y + 0.38);
+  hoist.update(dt, state.mode === 'drop', state.mode === 'drop' && state.drop.hold > 0, sim);
   updateCamera(dt);
   bike.group.updateMatrixWorld();
   updateOverlays(dt, parts);
@@ -3171,7 +3238,7 @@ setCam('orbit');
 $('#go').addEventListener('click', () => { $('#intro').remove(); cam.idle = 0; });
 document.fonts?.ready.then(() => { TEXT_TEX.forEach((t) => t.redraw()); syncControls(); }).catch(() => {});
 requestAnimationFrame(frame);
-window.__lab = { state, cam, setCam, loadMission, setMode, setProgram, change, toScreen, STATION_POS, camera, stageSize };
+window.__lab = { bike, state, cam, setCam, loadMission, setMode, setProgram, change, toScreen, STATION_POS, camera, stageSize };
 
 </script>
 </body>
