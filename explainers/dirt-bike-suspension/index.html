@@ -1725,7 +1725,7 @@ const KIT = { white: '#ece6d8', char: '#2b2d33', deep: '#18191d', gold: '#d9a145
 const RD = {
   boot: phys(KIT.white, 0.38, 0, { clearcoat: 0.5, clearcoatRoughness: 0.3 }), bootDark: std(KIT.deep, 0.6), buckle: std('#b8bcc2', 0.3, 0.9),
   glove: std(KIT.char, 0.72), gloveTop: std(KIT.deep, 0.5),
-  lens: std('#d98a3a', 0.08, 1), gstrap: std(KIT.char, 0.7), goggle: std('#141518', 0.5), strap: std('#d9a145', 0.75), neck: std('#1d1e22', 0.6),
+  lens: std('#d98a3a', 0.08, 1), goggle: std('#141518', 0.5), strap: std('#d9a145', 0.75), neck: std('#1d1e22', 0.6),
   brace: std('#17181b', 0.45, 0.3),
   shell: phys('#efe9dc', 0.25, 0, { clearcoat: 0.9, clearcoatRoughness: 0.12 }),
 };
@@ -1787,40 +1787,160 @@ const sleeveTex = canvasTex(256, 256, (c, W, H) => {
 });
 const sleeveBump = canvasTex(128, 256, (c, W, H) => folds(c, W, H, [[0.4, 0.58, 4], [0.78, 0.92, 3]]));
 const pantsTex = canvasTex(256, 512, (c, W, H) => {
+  // v runs from the seat (0) past the hip (about 0.2) and the knee (about 0.6) to the ankle; u = 0 is the front, 0.5 the back
   const Y = (v) => H * (1 - v);
   c.fillStyle = KIT.char; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#3a3c43'; c.fillRect(W * 0.3, Y(0.3), W * 0.4, Y(0) - Y(0.3)); // stretch panel over the seat
+  c.fillStyle = KIT.deep; c.fillRect(W * 0.3, Y(0.3), W * 0.012, Y(0) - Y(0.3)); c.fillRect(W * 0.688, Y(0.3), W * 0.012, Y(0) - Y(0.3));
   for (const u of [0.25, 0.75]) {
-    c.fillStyle = KIT.white; c.fillRect(W * (u - 0.07), Y(0.4), W * 0.14, Y(0.02) - Y(0.4));
-    c.fillStyle = KIT.gold; c.fillRect(W * (u + 0.07), Y(0.4), W * 0.012, Y(0.02) - Y(0.4));
+    c.fillStyle = KIT.white; c.fillRect(W * (u - 0.07), Y(0.5), W * 0.14, Y(0.12) - Y(0.5));
+    c.fillStyle = KIT.gold; c.fillRect(W * (u + 0.07), Y(0.5), W * 0.012, Y(0.12) - Y(0.5));
   }
-  c.fillStyle = KIT.deep; c.fillRect(0, Y(0.62), W * 0.16, Y(0.4) - Y(0.62)); c.fillRect(W * 0.84, Y(0.62), W * 0.16, Y(0.4) - Y(0.62)); // knee panel
+  c.fillStyle = KIT.deep; c.fillRect(0, Y(0.7), W * 0.16, Y(0.5) - Y(0.7)); c.fillRect(W * 0.84, Y(0.7), W * 0.16, Y(0.5) - Y(0.7)); // knee panel
 });
-const pantsBump = canvasTex(128, 256, (c, W, H) => folds(c, W, H, [[0.38, 0.62, 5], [0.66, 0.8, 3]]));
+const pantsBump = canvasTex(128, 256, (c, W, H) => folds(c, W, H, [[0.48, 0.7, 5], [0.74, 0.86, 3]]));
 for (const t of [torsoBump, sleeveBump, pantsBump]) { t.colorSpace = THREE.NoColorSpace; t.needsUpdate = true; }
 RD.jerseyBody = fabric(torsoTex, torsoBump);
 RD.sleeve = fabric(sleeveTex, sleeveBump);
 RD.pantsLeg = fabric(pantsTex, pantsBump);
-const helmetTex = canvasTex(512, 256, (c, W, H) => {
-  // sphere UVs: u = 0.5 is the front of the helmet, u = 0.25 / 0.75 the sides, canvas top the crown
+// ---- helmet -------------------------------------------------------------------------------------------------
+// One function describes the shell. The painted lid, its rubber trims, the peak's mounting edge and the goggle strap
+// are all built on it. Directions are (az, el): az 0 straight ahead and positive towards +z, el 0 at eye level.
+const HELM = { r: 0.142, pa: 0.82, pe0: 0.05, pe: 0.31 };
+const helmPortD = (az, el) => Math.pow((Math.abs(az) / HELM.pa) ** 4 + (Math.abs(el - HELM.pe0) / HELM.pe) ** 4, 0.25);
+const helmEdge = (az) => -0.76 + 0.06 * Math.sin(az) ** 2; // sin(el) of the bottom edge: a little higher over the ears
+function helmPoint(az, el, recess = true) {
+  const r = HELM.r, ss = THREE.MathUtils.smoothstep, nb = helmEdge(az), sb = Math.sin(el);
+  const shape = (s, c) => {
+    const down = -s, nx = c * Math.cos(az), nz = c * Math.sin(az);
+    // chin bar: the lower front pulled forward and down into a beak with a ridge down the middle
+    const w = ss(down, 0.24, 0.62) * Math.pow(Math.max(0, 1 - Math.abs(az) / 1.05), 1.3);
+    // the lower back edge kicks out a little
+    const flare = ss(down, 0.38, 0.76) * Math.max(0, -Math.cos(az)) * 0.011;
+    return [(1.1 * r + flare) * nx + w * 0.088, r * s - w * 0.03, (0.95 * r + flare) * nz * (1 - 0.22 * w)];
+  };
+  let p;
+  if (sb >= nb) p = shape(sb, Math.cos(el));
+  else { // below the edge: a shallow dish closes the underside
+    const cb = Math.sqrt(1 - nb * nb), e = shape(nb, cb), f = Math.cos(el) / cb;
+    p = [e[0] * f, e[1] - (1 - f) * r * 0.06, e[2] * f];
+  }
+  if (recess) { const k = 1 - 0.1 * (1 - ss(helmPortD(az, el), 0.88, 1.0)); p[0] *= k; p[1] *= k; p[2] *= k; } // the eye port
+  return p;
+}
+const HELM_GEO = (() => {
+  const G = {};
+  { // shell
+    const g = new THREE.SphereGeometry(1, 120, 72), p = g.attributes.position, uv = g.attributes.uv;
+    for (let i = 0; i < p.count; i++) p.setXYZ(i, ...helmPoint(Math.PI - uv.getX(i) * TAU, Math.asin(clamp(p.getY(i), -1, 1))));
+    G.shell = toCreasedNormals(g, Math.PI / 2.8);
+  }
+  // rubber trims round the eye port and the bottom edge
+  const sq = (v) => Math.sign(v) * Math.sqrt(Math.abs(v));
+  const loop = (n, f) => new THREE.CatmullRomCurve3(Array.from({ length: n }, (_, i) => new THREE.Vector3(...f((i / n) * TAU))), true);
+  G.portTrim = new THREE.TubeGeometry(loop(96, (t) => helmPoint(0.975 * HELM.pa * sq(Math.cos(t)), HELM.pe0 + 0.975 * HELM.pe * sq(Math.sin(t)))), 200, 0.0055, 8, true);
+  G.edgeTrim = new THREE.TubeGeometry(loop(120, (a) => helmPoint(a, Math.asin(helmEdge(a)), false)), 200, 0.0075, 8, true);
+  // peak: its back edge follows the brow, it reaches furthest in the middle, fans out and tips up a little
+  G.peakPt = (u, v, t) => {
+    const az = u * 0.98, b = helmPoint(az, 0.43 - 0.2 * u * u, false), d = v * (0.025 + 0.12 * (1 - Math.abs(u) ** 2.2)), da = 0.4 * az;
+    return [b[0] * 0.96 + Math.cos(da) * d, b[1] * 0.96 + d * 0.17 + t * (0.0075 - 0.0025 * v), b[2] * 0.96 + Math.sin(da) * d];
+  };
+  {
+    const g = new THREE.BoxGeometry(1, 1, 1, 24, 1, 32), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) p.setXYZ(i, ...G.peakPt(p.getZ(i) * 2, p.getX(i) + 0.5, p.getY(i) + 0.5));
+    g.computeVertexNormals(); G.peak = g;
+  }
+  // goggles: a foam-backed frame that fills the eye port, with a nose cut-out, and a mirrored lens on its face
+  const slab = (a0, top, bot, notch, k0, k1) => {
+    const g = new THREE.BoxGeometry(1, 1, 1, 40, 6, 1), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const a = -p.getX(i) * 2 * a0, s = p.getY(i) + 0.5, k = k0 + (p.getZ(i) + 0.5) * (k1 - k0);
+      const end = Math.max(0, (Math.abs(a) - a0 * 0.75) / (a0 * 0.25)) ** 2;
+      const yt = top - 0.014 * end, yb = bot + 0.012 * end + notch * Math.exp(-((a / 0.14) ** 2));
+      p.setXYZ(i, 0.156 * k * Math.cos(a), yb + (yt - yb) * s, 0.1349 * k * Math.sin(a));
+    }
+    g.computeVertexNormals(); return g;
+  };
+  G.frame = slab(0.77, 0.044, -0.03, 0.02, 0.9, 1.035);
+  G.lens = slab(0.68, 0.037, -0.023, 0.018, 1.03, 1.046);
+  { // strap: round the back of the shell at goggle height
+    const a0 = 0.74, span = TAU - 2 * a0, g = new THREE.BoxGeometry(1, 1, 1, 72, 1, 1), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const a = Math.PI - p.getX(i) * span, y = 0.007 + p.getY(i) * 0.036, off = 0.004 + (p.getZ(i) + 0.5) * 0.003;
+      const b = helmPoint(a, Math.asin(y / HELM.r), false), rr = Math.hypot(b[0], b[2]);
+      p.setXYZ(i, b[0] * (1 + off / rr), y, b[2] * (1 + off / rr));
+    }
+    g.computeVertexNormals(); G.strap = g;
+  }
+  G.screw = new THREE.CylinderGeometry(0.0065, 0.0065, 0.005, 14);
+  return G;
+})();
+const helmetTex = canvasTex(1024, 512, (c, W, H) => {
+  // the shell's UVs are its (az, el) directions: u = 0.5 straight ahead, the canvas top the crown
+  const X = (az) => (0.5 - az / TAU) * W, Y = (el) => (0.5 - el / Math.PI) * H;
+  const path = (pts) => { c.beginPath(); pts.forEach(([a, e], i) => (i ? c.lineTo(X(a), Y(e)) : c.moveTo(X(a), Y(e)))); };
+  const poly = (pts, col) => { path(pts); c.closePath(); c.fillStyle = col; c.fill(); };
+  const line = (pts, col, w) => { path(pts); c.strokeStyle = col; c.lineWidth = w; c.lineJoin = c.lineCap = 'round'; c.stroke(); };
   c.fillStyle = KIT.white; c.fillRect(0, 0, W, H);
-  // a charcoal panel low on each side, rising towards the back of the shell
-  c.fillStyle = KIT.char;
-  for (const d of [-1, 1]) { c.beginPath(); c.moveTo(W * (0.5 + d * 0.13), H); c.bezierCurveTo(W * (0.5 + d * 0.2), H * 0.8, W * (0.5 + d * 0.3), H * 0.66, W * (0.5 + d * 0.5), H * 0.62); c.lineTo(W * (0.5 + d * 0.5), H); c.closePath(); c.fill(); }
-  c.strokeStyle = KIT.gold; c.lineWidth = H * 0.022;
-  for (const d of [-1, 1]) { c.beginPath(); c.moveTo(W * (0.5 + d * 0.11), H); c.bezierCurveTo(W * (0.5 + d * 0.18), H * 0.77, W * (0.5 + d * 0.29), H * 0.62, W * (0.5 + d * 0.5), H * 0.58); c.stroke(); }
-  // a gold stripe with a dark pinstripe over the crown, front to back
-  for (const u of [0.0, 0.5, 1.0]) { c.fillStyle = KIT.gold; c.fillRect(W * u - W * 0.028, 0, W * 0.056, H * 0.4); c.fillStyle = KIT.char; c.fillRect(W * u - W * 0.006, 0, W * 0.012, H * 0.4); }
-  // eye port (the goggles sit in it)
-  const port = (x0, x1, y0, y1, r) => { c.beginPath(); c.moveTo(x0 + r, y0); c.lineTo(x1 - r, y0); c.quadraticCurveTo(x1, y0, x1, y0 + r); c.lineTo(x1, y1 - r); c.quadraticCurveTo(x1, y1, x1 - r, y1); c.lineTo(x0 + r, y1); c.quadraticCurveTo(x0, y1, x0, y1 - r); c.lineTo(x0, y0 + r); c.quadraticCurveTo(x0, y0, x0 + r, y0); c.fill(); };
-  c.fillStyle = '#101114'; port(W * 0.38, W * 0.62, H * 0.4, H * 0.57, H * 0.05);
-  // chin bar: a grey mouth vent with slats
-  c.fillStyle = '#55585f'; port(W * 0.47, W * 0.53, H * 0.66, H * 0.78, H * 0.02);
-  c.fillStyle = '#2b2d33'; for (let k = 0; k < 4; k++) c.fillRect(W * 0.474, H * (0.675 + k * 0.026), W * 0.052, H * 0.01);
-  // neck roll
-  c.fillStyle = KIT.deep; c.fillRect(0, H * 0.9, W, H * 0.1);
+  for (const s of [-1, 1]) {
+    // a charcoal panel sweeping up the lower back of the shell, edged in gold
+    poly([[s * 1.2, -1.3], [s * 1.25, -0.6], [s * 1.6, -0.18], [s * 2.2, 0.12], [s * 2.8, 0.2], [s * Math.PI, 0.2], [s * Math.PI, -1.3]], KIT.char);
+    line([[s * 1.1, -0.68], [s * 1.5, -0.12], [s * 2.15, 0.22], [s * 2.8, 0.3], [s * Math.PI, 0.3]], KIT.gold, H * 0.014);
+    // gold flash on each side of the chin bar
+    poly([[s * 0.36, -0.76], [s * 0.6, -0.38], [s * 0.76, -0.38], [s * 0.52, -0.76]], KIT.gold);
+  }
+  // a gold stripe with a charcoal pinstripe over the crown, the same width all the way over
+  for (let y = 0; y < H; y++) {
+    const el = (0.5 - (y + 0.5) / H) * Math.PI, ce = Math.max(0.01, Math.cos(el));
+    const bar = (az0, m, col) => { const h = Math.min(Math.PI, m / (HELM.r * ce)); c.fillStyle = col; c.fillRect(X(az0 + h), y, X(az0 - h) - X(az0 + h), 1.5); };
+    const at = el > 0.42 ? [0, Math.PI, -Math.PI] : el > -0.5 ? [Math.PI, -Math.PI] : [];
+    for (const a of at) { bar(a, 0.026, KIT.gold); bar(a, 0.005, KIT.char); }
+  }
+  // eye port: the recess the goggles sit in
+  c.fillStyle = '#0e0f11'; c.beginPath();
+  for (let i = 0; i <= 96; i++) {
+    const t = (i / 96) * TAU, sq = (v) => Math.sign(v) * Math.sqrt(Math.abs(v));
+    const a = 0.99 * HELM.pa * sq(Math.cos(t)), e = HELM.pe0 + 0.99 * HELM.pe * sq(Math.sin(t));
+    i ? c.lineTo(X(a), Y(e)) : c.moveTo(X(a), Y(e));
+  }
+  c.fill();
+  // chin bar: a mouth vent with metal slats
+  c.fillStyle = '#26282d'; c.beginPath(); c.roundRect(X(0.17), Y(-0.35), X(-0.17) - X(0.17), Y(-0.62) - Y(-0.35), H * 0.012); c.fill();
+  for (let k = 0; k < 4; k++) line([[-0.13, -0.4 - k * 0.055], [0.13, -0.4 - k * 0.055]], '#9a9ea5', H * 0.008);
+  // underside
+  path([[-Math.PI, -1.6], ...Array.from({ length: 65 }, (_, i) => { const a = -Math.PI + (i / 64) * TAU; return [a, Math.asin(helmEdge(a))]; }), [Math.PI, -1.6]]); c.fillStyle = KIT.deep; c.fill();
+  // rider number high on each side, maker's mark on the charcoal panel
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  for (const s of [-1, 1]) {
+    c.fillStyle = KIT.char; c.font = `900 ${H * 0.1}px ${SANS}`; c.fillText('01', X(s * 1.8), Y(0.38));
+    c.fillStyle = KIT.white; c.font = `800 ${H * 0.05}px ${SANS}`; c.fillText('EGOD', X(s * 2.05), Y(-0.34));
+  }
 });
+TEXT_TEX.push(helmetTex);
+const peakTex = canvasTex(256, 256, (c, W, H) => {
+  // u runs from the brow to the tip of the peak, v across it
+  c.fillStyle = KIT.white; c.fillRect(0, 0, W, H);
+  c.fillStyle = KIT.gold; c.fillRect(0, H * 0.44, W * 0.86, H * 0.12);
+  c.fillStyle = KIT.char; c.fillRect(0, H * 0.49, W * 0.86, H * 0.02); c.fillRect(W * 0.88, 0, W * 0.12, H);
+  c.fillStyle = KIT.gold; c.fillRect(W * 0.855, 0, W * 0.015, H);
+  for (const y of [0.27, 0.65]) {
+    c.fillStyle = '#26282d'; c.beginPath(); c.roundRect(W * 0.12, H * y, W * 0.26, H * 0.08, H * 0.02); c.fill();
+    c.fillStyle = '#6b6e75'; for (let k = 1; k < 4; k++) c.fillRect(W * (0.12 + k * 0.065), H * y, W * 0.012, H * 0.08);
+  }
+});
+const strapTex = canvasTex(256, 64, (c, W, H) => {
+  c.fillStyle = KIT.char; c.fillRect(0, 0, W, H);
+  c.fillStyle = KIT.white; c.fillRect(0, H * 0.08, W, H * 0.06); c.fillRect(0, H * 0.86, W, H * 0.06);
+  c.fillStyle = KIT.gold;
+  for (let i = 0; i < 4; i++) { const x = W * (i + 0.5) / 4; c.beginPath(); c.moveTo(x - H * 0.3, H * 0.5); c.lineTo(x, H * 0.22); c.lineTo(x + H * 0.3, H * 0.5); c.lineTo(x, H * 0.78); c.fill(); }
+}, true);
+strapTex.repeat.set(9, 1);
 RD.helmet = phys('#ffffff', 0.25, 0, { map: helmetTex, clearcoat: 0.9, clearcoatRoughness: 0.12 });
 RD.helmetDark = phys('#1b1c20', 0.3, 0, { clearcoat: 0.8, clearcoatRoughness: 0.2 });
+RD.peakTop = phys('#ffffff', 0.25, 0, { map: peakTex, clearcoat: 0.9, clearcoatRoughness: 0.12 });
+RD.peakUnder = phys('#e4ddcf', 0.45, 0, { clearcoat: 0.4, clearcoatRoughness: 0.3 });
+RD.trim = std('#141416', 0.75);
+RD.gstrap = std('#ffffff', 0.7, 0, { map: strapTex });
 
 const bike = (() => {
   const g = new THREE.Group(); scene.add(g);
@@ -2166,7 +2286,7 @@ function sweepMesh(rings, sides, mat) {
   for (let i = 0; i < rings; i++) { C.push([0, 0, 0]); T.push([0, 0, 0]); N.push([0, 0, 0]); B.push([0, 0, 0]); }
   const sg = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
 
-  m.update = (joints, ref, keys, girth = 1, round = 0.07) => {
+  m.update = (joints, ref, keys, girth = 1, round = 0.07, cap = 0) => {
     // 1. rounded polyline through the joints, and where each joint falls along it
     const poly = [joints[0]], marks = [0];
     let acc = 0;
@@ -2184,7 +2304,9 @@ function sweepMesh(rings, sides, mat) {
     // 2. rings evenly spaced along the path
     let sgi = 1;
     for (let i = 0; i < rings; i++) {
-      const s = (total * i) / (rings - 1); S[i] = s;
+      // with a cap, the first `cap` rings close the tube over the first joint like a dome
+      const s = !cap ? (total * i) / (rings - 1) : i < cap ? mk[1] * (1 - Math.cos((i / cap) * Math.PI / 2)) : mk[1] + ((total - mk[1]) * (i - cap)) / (rings - 1 - cap);
+      S[i] = s;
       while (sgi < poly.length - 1 && cum[sgi] < s) sgi++;
       const t = (s - cum[sgi - 1]) / (cum[sgi] - cum[sgi - 1] || 1);
       for (let q = 0; q < 3; q++) C[i][q] = poly[sgi - 1][q] + (poly[sgi][q] - poly[sgi - 1][q]) * t;
@@ -2204,7 +2326,7 @@ function sweepMesh(rings, sides, mat) {
       let seg = 0; while (seg < mk.length - 2 && s > mk[seg + 1]) seg++;
       const x = seg + (s - mk[seg]) / (mk[seg + 1] - mk[seg] || 1);
       let k = 0; while (k < keys.length - 2 && x > keys[k + 1][0]) k++;
-      const k0 = keys[k], k1 = keys[k + 1], f = clamp((x - k0[0]) / (k1[0] - k0[0] || 1), 0, 1), e = f * f * (3 - 2 * f);
+      const k0 = keys[k], k1 = keys[k + 1], f = clamp((x - k0[0]) / (k1[0] - k0[0] || 1), 0, 1), e = cap && k === 0 ? Math.sqrt(1 - (1 - f) * (1 - f)) : f * f * (3 - 2 * f);
       const A = (k0[1] + (k1[1] - k0[1]) * e) * girth, Bw = (k0[2] + (k1[2] - k0[2]) * e) * girth, P = (k0[3] || 2) + ((k1[3] || 2) - (k0[3] || 2)) * e;
       const ex = 2 / P, eg = (2 * (P - 1)) / P;
       for (let j = 0; j <= sides; j++) {
@@ -2233,12 +2355,12 @@ function sweepMesh(rings, sides, mat) {
 // body profiles: [x, half-depth (front-back), half-width, squareness]
 const PROF = {
   // crotch -> pelvis -> lower chest -> neck base -> top of the neck
-  torso: [[0, 0.04, 0.07, 2], [0.35, 0.088, 0.135, 2.1], [1, 0.112, 0.168, 2.3], [1.45, 0.113, 0.16, 2.3], [2, 0.126, 0.174, 2.5], [2.5, 0.134, 0.19, 2.7],
+  torso: [[0, 0.03, 0.05, 2], [0.4, 0.06, 0.105, 2.1], [1, 0.096, 0.152, 2.3], [1.45, 0.113, 0.16, 2.3], [2, 0.126, 0.174, 2.5], [2.5, 0.134, 0.19, 2.7],
     [2.86, 0.122, 0.198, 2.9], [3, 0.085, 0.11, 2.4], [3.18, 0.062, 0.064, 2], [4, 0.056, 0.056, 2]],
   // shoulder (inside the torso) -> shoulder joint -> elbow -> wrist; loose sleeve with a cuff
   arm: [[0, 0.05, 0.05], [1, 0.062, 0.062], [1.3, 0.058, 0.056], [1.85, 0.05, 0.05], [2, 0.051, 0.05], [2.28, 0.054, 0.05], [2.86, 0.043, 0.041], [3, 0.046, 0.046]],
-  // hip -> knee -> ankle; baggy pants over knee braces, tucked into the boot
-  leg: [[0, 0.09, 0.092], [0.15, 0.098, 0.1], [0.5, 0.09, 0.09], [0.8, 0.074, 0.076], [0.97, 0.08, 0.08], [1.12, 0.072, 0.068], [1.3, 0.06, 0.058], [1.5, 0.05, 0.05], [2, 0.044, 0.044]],
+  // seat -> hip -> knee -> ankle; the seat domes off behind the hip, baggy pants over knee braces, tucked into the boot
+  leg: [[0, 0.003, 0.003], [1, 0.092, 0.094], [1.15, 0.097, 0.099], [1.5, 0.09, 0.09], [1.8, 0.074, 0.076], [1.97, 0.08, 0.08], [2.12, 0.072, 0.068], [2.3, 0.06, 0.058], [2.5, 0.05, 0.05], [3, 0.044, 0.044]],
 };
 
 function buildRider() {
@@ -2246,7 +2368,7 @@ function buildRider() {
   const add = (m) => { g.add(m); return m; };
   const torso = add(sweepMesh(40, 28, RD.jerseyBody));
   const arms = [0, 1].map(() => add(sweepMesh(30, 16, RD.sleeve)));
-  const legs = [0, 1].map(() => add(sweepMesh(34, 18, RD.pantsLeg)));
+  const legs = [0, 1].map(() => add(sweepMesh(46, 20, RD.pantsLeg)));
   // tall boots: a shaft up the shin with a dark padded top, a chunky foot, four buckles
   const BOOT = [[0, 0], [0.07, 0.0], [0.074, 0.12], [0.068, 0.45], [0.071, 0.8], [0.077, 0.9], [0, 0.9]];
   const CUFF = [[0, 0.88], [0.079, 0.88], [0.084, 0.94], [0.081, 1.0], [0.062, 1.0], [0, 0.99]];
@@ -2272,36 +2394,12 @@ function buildRider() {
     const band2 = mesh(new THREE.CylinderGeometry(0.0495, 0.0495, 0.016, 20), RD.gloveTop); band2.rotation.z = Math.PI / 2; band2.position.x = -0.07; h.add(band2);
     return h;
   });
-  // helmet: one shell pulled forward and down into a motocross chin bar, a wide peak, goggles in the eye port
+  // helmet (shapes shared by every rider, see HELM_GEO)
   const helmet = new THREE.Group(); g.add(helmet);
-  {
-    const r = 0.142, sg = new THREE.SphereGeometry(r, 56, 40), sp = sg.attributes.position;
-    for (let i = 0; i < sp.count; i++) {
-      const nx = sp.getX(i) / r, ny = sp.getY(i) / r, nz = sp.getZ(i) / r;
-      const w = Math.pow(Math.max(0, nx), 2.2) * THREE.MathUtils.smoothstep(-ny, 0.0, 0.62); // lower front: the chin bar
-      let x = 1.1 * nx * r + w * 0.105, y = ny * r - w * 0.04;
-      const z = 0.95 * nz * r * (1 - 0.5 * w);
-      const floor = -0.8 * r - w * 0.03; if (y < floor) y = floor + (y - floor) * 0.12; // open bottom where the neck goes in
-      sp.setXYZ(i, x, y, z);
-    }
-    sg.computeVertexNormals();
-    helmet.add(mesh(sg, RD.helmet));
-    // peak: a broad visor that narrows to a rounded point, drops away at the sides and tips up slightly
-    const pg = new THREE.BoxGeometry(1, 1, 1, 20, 1, 24), pp = pg.attributes.position;
-    for (let i = 0; i < pp.count; i++) {
-      const v = pp.getX(i) + 0.5, u = pp.getZ(i) * 2, t = pp.getY(i) > 0 ? 1 : 0;
-      const len = 0.235 - 0.075 * u * u, x = -0.02 + v * len, z = u * (0.126 - 0.055 * v * v);
-      pp.setXYZ(i, x, 0.14 * x - 1.3 * z * z + t * 0.011 * (1 - 0.45 * v), z);
-    }
-    pg.computeVertexNormals();
-    const peak = mesh(pg, RD.shell); peak.position.set(0.075, 0.062, 0); helmet.add(peak);
-    { const ps = mesh(RB(0.12, 0.004, 0.024, 0.0015), RD.strap); ps.position.set(0.16, 0.08, 0); ps.rotation.z = 0.14; helmet.add(ps); }
-    // goggles: a foam-backed frame across the eye port, a mirrored lens, a strap round the back of the shell
-    const arc = (k, a0, a1, y, n = 11) => Array.from({ length: n }, (_, i) => { const a = a0 + ((a1 - a0) * i) / (n - 1); return [0.156 * k * Math.cos(a), y, 0.135 * k * Math.sin(a)]; });
-    helmet.add(band(arc(1.03, -0.9, 0.9, 0.01), 0.031, 0.011, RD.goggle));
-    helmet.add(band(arc(1.1, -0.74, 0.74, 0.01), 0.024, 0.003, RD.lens));
-    helmet.add(band(arc(1.035, 0.85, Math.PI * 2 - 0.85, 0.01, 25), 0.0135, 0.003, RD.gstrap));
-  }
+  helmet.add(mesh(HELM_GEO.shell, RD.helmet), mesh(HELM_GEO.portTrim, RD.trim), mesh(HELM_GEO.edgeTrim, RD.trim),
+    mesh(HELM_GEO.peak, [RD.shell, RD.shell, RD.peakTop, RD.peakUnder, RD.shell, RD.shell]),
+    mesh(HELM_GEO.frame, RD.goggle), mesh(HELM_GEO.lens, RD.lens), mesh(HELM_GEO.strap, RD.gstrap));
+  for (const u of [-0.8, 0, 0.8]) { const sc = mesh(HELM_GEO.screw, RD.buckle); sc.position.set(...HELM_GEO.peakPt(u, 0.16, 1)); helmet.add(sc); }
   const Z = new THREE.Vector3(0, 0, 1), bdir = new THREE.Vector3(), hx = new THREE.Vector3(), hy = new THREE.Vector3(), hz = new THREE.Vector3(), hm = new THREE.Matrix4();
   const place = (m, a, b, sx, sz = sx) => { aim(m, a, b); m.scale.set(sx, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), sz); };
   const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -2313,14 +2411,15 @@ function buildRider() {
     pose(j, k = 1) {
       // torso: from below the pelvis, through a slightly rounded upper back, up the neck towards the head
       const spine = unit(sub(j.neck, j.pelvis)), front = [spine[1], -spine[0], 0];
-      const crotch = [j.pelvis[0] + 0.015, j.pelvis[1] - 0.105, 0];
+      const crotch = [j.pelvis[0] + 0.02, j.pelvis[1] - 0.08, 0];
       const chest = along(along(j.pelvis, spine, 0.3), front, -0.018);
       const neckTop = along(j.neck, unit(sub(j.head, j.neck)), 0.075);
       torso.update([crotch, j.pelvis, chest, j.neck, neckTop], front, PROF.torso, k, 0.09);
       for (let i = 0; i < 2; i++) {
         const s = i ? 1 : -1;
-        // leg: the knee's bend gives the front of the leg
-        legs[i].update([j.hip[i], j.knee[i], j.ankle[i]], unit(sub(j.knee[i], mid(j.hip[i], j.ankle[i]))), PROF.leg, k, 0.08);
+        // leg: the knee's bend gives the front of the leg; it starts behind the hip so each leg rounds off into one cheek of the seat
+        const thigh = unit(sub(j.knee[i], j.hip[i])), seat = [j.hip[i][0] - thigh[0] * 0.07 - front[0] * 0.03, j.hip[i][1] - thigh[1] * 0.07 - front[1] * 0.03, j.hip[i][2]];
+        legs[i].update([seat, j.hip[i], j.knee[i], j.ankle[i]], unit(sub(j.knee[i], mid(j.hip[i], j.ankle[i]))), PROF.leg, k, 0.08, 9);
         // arm: starts inside the torso so the shoulder rounds off into it
         const wrist = along(j.hand[i], unit(sub(j.elbow[i], j.hand[i])), 0.075);
         const inner = [j.shoulder[i][0] - spine[0] * 0.01, j.shoulder[i][1] - spine[1] * 0.01, j.shoulder[i][2] - s * 0.06];
