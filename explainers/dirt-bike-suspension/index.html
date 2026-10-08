@@ -1719,44 +1719,105 @@ const louverTex = canvasTex(128, 128, (c, W, H) => {
 BK.rad.map = louverTex;
 
 // rider kit
-// A rider in motocross kit: helmet with peak and goggles, loose jersey, knee braces, tall boots.
+// A rider in motocross kit. The body is one smooth surface per chain (torso, arms, legs) rebuilt from the pose
+// every frame, dressed in a loose jersey tucked into the pants, tall boots, gloves on the grips and a helmet.
+const KIT = { white: '#ece6d8', char: '#2b2d33', deep: '#18191d', gold: '#d9a145', grey: '#8d8f94' };
 const RD = {
-  jersey: std('#24262c', 0.86), jerseyGold: std('#d9a145', 0.8),
-  pants: std('#2c2e33', 0.88), brace: std('#17181b', 0.45, 0.3), braceGold: std('#e3ad4b', 0.35, 0.6),
-  boot: std('#e9e3d6', 0.42), bootDark: std('#1b1c1f', 0.6), buckle: std('#b8bcc2', 0.3, 0.9),
-  glove: std('#1d1e22', 0.75), gloveGold: std('#d9a145', 0.7),
-  lens: std('#d98a3a', 0.08, 1), goggle: std('#141518', 0.5), strap: std('#d9a145', 0.75), neck: std('#1d1e22', 0.6),
+  boot: phys(KIT.white, 0.38, 0, { clearcoat: 0.5, clearcoatRoughness: 0.3 }), bootDark: std(KIT.deep, 0.6), buckle: std('#b8bcc2', 0.3, 0.9),
+  glove: std(KIT.char, 0.72), gloveTop: std(KIT.deep, 0.5),
+  lens: std('#d98a3a', 0.08, 1), gstrap: std(KIT.char, 0.7), goggle: std('#141518', 0.5), strap: std('#d9a145', 0.75), neck: std('#1d1e22', 0.6),
+  brace: std('#17181b', 0.45, 0.3),
   shell: phys('#efe9dc', 0.25, 0, { clearcoat: 0.9, clearcoatRoughness: 0.12 }),
 };
-const jerseyTex = canvasTex(512, 256, (c, W, H) => {
-  // lathe UVs: u runs around the body (u = 0.5 faces forward), v runs pelvis -> neck
-  // (u = 0.25 is the chest, 0.75 the back, 0 and 0.5 the sides)
-  c.fillStyle = '#24262c'; c.fillRect(0, 0, W, H);
-  c.fillStyle = '#3a3d45'; for (const u of [0, 0.5, 1]) c.fillRect(W * u - W * 0.05, 0, W * 0.1, H);
-  c.fillStyle = '#d9a145'; c.fillRect(0, H * 0.3, W, H * 0.06);
-  for (const u of [0, 0.5, 1]) c.fillRect(W * u - W * 0.012, 0, W * 0.024, H);
-  c.fillStyle = '#e8dcc6'; c.font = `900 ${H * 0.26}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.fillText('01', W * 0.75, H * 0.6);
-});
-TEXT_TEX.push(jerseyTex);
-RD.jerseyBody = std('#ffffff', 0.86, 0, { map: jerseyTex });
-const helmetTex = canvasTex(512, 256, (c, W, H) => {
-  // sphere UVs: u = 0.5 is the front of the helmet, canvas top the crown, H * 0.5 the brow line
-  c.fillStyle = '#efe9dc'; c.fillRect(0, 0, W, H);
-  // a swoosh along each side, low on the shell
-  for (const u of [0.25, 0.75]) {
-    const d = u < 0.5 ? 1 : -1; // run towards the front on both sides
-    c.lineCap = 'round';
-    c.strokeStyle = '#1b1c20'; c.lineWidth = H * 0.05; c.beginPath(); c.moveTo(W * (u - d * 0.17), H * 0.76); c.quadraticCurveTo(W * u, H * 0.66, W * (u + d * 0.1), H * 0.6); c.stroke();
-    c.strokeStyle = '#e3ad4b'; c.lineWidth = H * 0.02; c.beginPath(); c.moveTo(W * (u - d * 0.17), H * 0.69); c.quadraticCurveTo(W * u, H * 0.59, W * (u + d * 0.1), H * 0.53); c.stroke();
+// fabric: textures are laid out with u around the tube (u = 0 is the front of the chest, the front of the knee,
+// the back of the elbow) and v along it (v = 0 at the crotch / shoulder / hip end)
+const fabric = (map, bump) => phys('#ffffff', 0.86, 0, { map, bumpMap: bump, bumpScale: 1.2, sheen: 0.6, sheenRoughness: 0.75, sheenColor: '#ffffff' });
+const folds = (c, W, H, bands) => {
+  // soft creases across the fabric where it bunches (grey bump map, 128 = flat)
+  c.fillStyle = 'rgb(128,128,128)'; c.fillRect(0, 0, W, H);
+  for (const [v0, v1, n] of bands) {
+    for (let i = 0; i < n; i++) {
+      const y = H * (1 - (v0 + ((v1 - v0) * (i + 0.5)) / n));
+      const gr = c.createLinearGradient(0, y - 6, 0, y + 6);
+      gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(70,70,70,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = gr; c.beginPath();
+      const ph = Math.random() * 6;
+      c.moveTo(0, y - 6);
+      for (let x = 0; x <= W; x += 16) c.lineTo(x, y + Math.sin(x / W * 12.566 + ph) * 3 - 6);
+      for (let x = W; x >= 0; x -= 16) c.lineTo(x, y + Math.sin(x / W * 12.566 + ph) * 3 + 6);
+      c.fill();
+    }
   }
-  // stripes over the crown, front to back
-  for (const u of [0.0, 0.5, 1.0]) { c.fillStyle = '#e3ad4b'; c.fillRect(W * u - W * 0.03, 0, W * 0.06, H * 0.42); c.fillStyle = '#1b1c20'; c.fillRect(W * u - W * 0.007, 0, W * 0.014, H * 0.42); }
-  // eye port and mouth opening
-  const x0 = W * 0.375, x1 = W * 0.625, y0 = H * 0.41, y1 = H * 0.8, r = H * 0.08;
-  c.fillStyle = '#101114'; c.beginPath(); c.moveTo(x0 + r, y0); c.lineTo(x1 - r, y0); c.quadraticCurveTo(x1, y0, x1, y0 + r); c.lineTo(x1, y1); c.lineTo(x0, y1); c.lineTo(x0, y0 + r); c.quadraticCurveTo(x0, y0, x0 + r, y0); c.fill();
+};
+const torsoTex = canvasTex(512, 512, (c, W, H) => {
+  const Y = (v) => H * (1 - v);
+  // pants up to the waist
+  c.fillStyle = KIT.char; c.fillRect(0, Y(0.3), W, H);
+  for (const u of [0.25, 0.75]) { c.fillStyle = KIT.white; c.fillRect(W * (u - 0.045), Y(0.27), W * 0.09, Y(0.02) - Y(0.27)); }
+  // jersey
+  c.fillStyle = KIT.white; c.fillRect(0, 0, W, Y(0.3));
+  for (const u of [0.25, 0.75]) {
+    c.fillStyle = KIT.char; c.beginPath(); c.moveTo(W * (u - 0.07), Y(0.3)); c.lineTo(W * (u + 0.07), Y(0.3)); c.lineTo(W * (u + 0.05), Y(0.84)); c.lineTo(W * (u - 0.05), Y(0.84)); c.fill();
+    c.fillStyle = KIT.gold; c.fillRect(W * (u - 0.004), Y(0.84), W * 0.008, Y(0.3) - Y(0.84));
+  }
+  // shoulder yoke and collar
+  c.fillStyle = KIT.char; c.fillRect(0, 0, W, Y(0.86));
+  c.fillStyle = KIT.gold; c.fillRect(0, Y(0.875), W, H * 0.012);
+  c.fillStyle = KIT.deep; c.fillRect(0, 0, W, Y(0.95));
+  // chest band across the front (wraps around u = 0)
+  c.fillStyle = KIT.gold; for (const x of [-0.17, 0.83]) c.fillRect(W * x, Y(0.68), W * 0.34, H * 0.03);
+  // waistband
+  c.fillStyle = KIT.deep; c.fillRect(0, Y(0.31), W, H * 0.035);
+  // number and name on the back, a small logo on the chest
+  c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = KIT.char;
+  c.font = `900 ${H * 0.2}px ${SANS}`; c.fillText('01', W * 0.5, Y(0.56));
+  c.font = `800 ${H * 0.05}px ${SANS}`; c.fillText('LAB', W * 0.5, Y(0.74));
+  c.fillStyle = KIT.char; c.font = `800 ${H * 0.04}px ${SANS}`;
+  for (const x of [0, 1]) c.fillText('EGOD', W * x, Y(0.6));
+});
+TEXT_TEX.push(torsoTex);
+const torsoBump = canvasTex(256, 256, (c, W, H) => folds(c, W, H, [[0.32, 0.46, 4], [0.05, 0.2, 3]]));
+const sleeveTex = canvasTex(256, 256, (c, W, H) => {
+  const Y = (v) => H * (1 - v);
+  c.fillStyle = KIT.white; c.fillRect(0, 0, W, H);
+  c.fillStyle = KIT.char; c.fillRect(0, Y(0.16), W, H * 0.16);                       // yoke over the shoulder
+  c.fillStyle = KIT.char; c.fillRect(0, Y(0.8), W * 0.14, Y(0.42) - Y(0.8)); c.fillRect(W * 0.86, Y(0.8), W * 0.14, Y(0.42) - Y(0.8)); // elbow panel
+  c.fillStyle = KIT.gold; c.fillRect(0, Y(0.9), W, H * 0.025);
+  c.fillStyle = KIT.char; c.fillRect(0, Y(1), W, H * 0.1);                            // cuff
+});
+const sleeveBump = canvasTex(128, 256, (c, W, H) => folds(c, W, H, [[0.4, 0.58, 4], [0.78, 0.92, 3]]));
+const pantsTex = canvasTex(256, 512, (c, W, H) => {
+  const Y = (v) => H * (1 - v);
+  c.fillStyle = KIT.char; c.fillRect(0, 0, W, H);
+  for (const u of [0.25, 0.75]) {
+    c.fillStyle = KIT.white; c.fillRect(W * (u - 0.07), Y(0.4), W * 0.14, Y(0.02) - Y(0.4));
+    c.fillStyle = KIT.gold; c.fillRect(W * (u + 0.07), Y(0.4), W * 0.012, Y(0.02) - Y(0.4));
+  }
+  c.fillStyle = KIT.deep; c.fillRect(0, Y(0.62), W * 0.16, Y(0.4) - Y(0.62)); c.fillRect(W * 0.84, Y(0.62), W * 0.16, Y(0.4) - Y(0.62)); // knee panel
+});
+const pantsBump = canvasTex(128, 256, (c, W, H) => folds(c, W, H, [[0.38, 0.62, 5], [0.66, 0.8, 3]]));
+for (const t of [torsoBump, sleeveBump, pantsBump]) { t.colorSpace = THREE.NoColorSpace; t.needsUpdate = true; }
+RD.jerseyBody = fabric(torsoTex, torsoBump);
+RD.sleeve = fabric(sleeveTex, sleeveBump);
+RD.pantsLeg = fabric(pantsTex, pantsBump);
+const helmetTex = canvasTex(512, 256, (c, W, H) => {
+  // sphere UVs: u = 0.5 is the front of the helmet, u = 0.25 / 0.75 the sides, canvas top the crown
+  c.fillStyle = KIT.white; c.fillRect(0, 0, W, H);
+  // a charcoal panel low on each side, rising towards the back of the shell
+  c.fillStyle = KIT.char;
+  for (const d of [-1, 1]) { c.beginPath(); c.moveTo(W * (0.5 + d * 0.13), H); c.bezierCurveTo(W * (0.5 + d * 0.2), H * 0.8, W * (0.5 + d * 0.3), H * 0.66, W * (0.5 + d * 0.5), H * 0.62); c.lineTo(W * (0.5 + d * 0.5), H); c.closePath(); c.fill(); }
+  c.strokeStyle = KIT.gold; c.lineWidth = H * 0.022;
+  for (const d of [-1, 1]) { c.beginPath(); c.moveTo(W * (0.5 + d * 0.11), H); c.bezierCurveTo(W * (0.5 + d * 0.18), H * 0.77, W * (0.5 + d * 0.29), H * 0.62, W * (0.5 + d * 0.5), H * 0.58); c.stroke(); }
+  // a gold stripe with a dark pinstripe over the crown, front to back
+  for (const u of [0.0, 0.5, 1.0]) { c.fillStyle = KIT.gold; c.fillRect(W * u - W * 0.028, 0, W * 0.056, H * 0.4); c.fillStyle = KIT.char; c.fillRect(W * u - W * 0.006, 0, W * 0.012, H * 0.4); }
+  // eye port (the goggles sit in it)
+  const port = (x0, x1, y0, y1, r) => { c.beginPath(); c.moveTo(x0 + r, y0); c.lineTo(x1 - r, y0); c.quadraticCurveTo(x1, y0, x1, y0 + r); c.lineTo(x1, y1 - r); c.quadraticCurveTo(x1, y1, x1 - r, y1); c.lineTo(x0 + r, y1); c.quadraticCurveTo(x0, y1, x0, y1 - r); c.lineTo(x0, y0 + r); c.quadraticCurveTo(x0, y0, x0 + r, y0); c.fill(); };
+  c.fillStyle = '#101114'; port(W * 0.38, W * 0.62, H * 0.4, H * 0.57, H * 0.05);
+  // chin bar: a grey mouth vent with slats
+  c.fillStyle = '#55585f'; port(W * 0.47, W * 0.53, H * 0.66, H * 0.78, H * 0.02);
+  c.fillStyle = '#2b2d33'; for (let k = 0; k < 4; k++) c.fillRect(W * 0.474, H * (0.675 + k * 0.026), W * 0.052, H * 0.01);
   // neck roll
-  c.fillStyle = '#1b1c20'; c.fillRect(0, H * 0.88, W, H * 0.12);
+  c.fillStyle = KIT.deep; c.fillRect(0, H * 0.9, W, H * 0.1);
 });
 RD.helmet = phys('#ffffff', 0.25, 0, { map: helmetTex, clearcoat: 0.9, clearcoatRoughness: 0.12 });
 RD.helmetDark = phys('#1b1c20', 0.3, 0, { clearcoat: 0.8, clearcoatRoughness: 0.2 });
@@ -2086,111 +2147,206 @@ function ik3(a, c, l1, l2, pole) {
   return [a[0] + dn[0] * x + p[0] * h, a[1] + dn[1] * x + p[1] * h, a[2] + dn[2] * x + p[2] * h];
 }
 
+// A tube rebuilt every frame along a path through joints, each joint rounded off, so a bent knee or elbow
+// stays one smooth surface. The cross-section is a superellipse whose size follows a profile keyed to the
+// joints: key x = 0..1 runs along the first bone, 1..2 along the second, and so on.
+function sweepMesh(rings, sides, mat) {
+  const W = sides + 1, n = rings * W;
+  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2), idx = [];
+  for (let i = 0; i < rings; i++) for (let j = 0; j <= sides; j++) { const k = i * W + j; uv[2 * k] = j / sides; uv[2 * k + 1] = i / (rings - 1); }
+  for (let i = 0; i < rings - 1; i++) for (let j = 0; j < sides; j++) { const a = i * W + j, b = a + W; idx.push(a, a + 1, b, b, a + 1, b + 1); }
+  const geo = new THREE.BufferGeometry();
+  const pa = new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage), na = new THREE.BufferAttribute(nor, 3).setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('position', pa); geo.setAttribute('normal', na); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(idx);
+  const m = mesh(geo, mat); m.frustumCulled = false;
+  const cs = [], sn = [];
+  for (let j = 0; j <= sides; j++) { cs.push(Math.cos((j / sides) * TAU)); sn.push(Math.sin((j / sides) * TAU)); }
+  const rad = new Float32Array(n), gx = new Float32Array(n), gy = new Float32Array(n);
+  const C = [], T = [], N = [], B = [], S = new Float32Array(rings);
+  for (let i = 0; i < rings; i++) { C.push([0, 0, 0]); T.push([0, 0, 0]); N.push([0, 0, 0]); B.push([0, 0, 0]); }
+  const sg = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
+
+  m.update = (joints, ref, keys, girth = 1, round = 0.07) => {
+    // 1. rounded polyline through the joints, and where each joint falls along it
+    const poly = [joints[0]], marks = [0];
+    let acc = 0;
+    for (let i = 1; i < joints.length; i++) acc += Math.hypot(joints[i][0] - joints[i - 1][0], joints[i][1] - joints[i - 1][1], joints[i][2] - joints[i - 1][2]), marks.push(acc);
+    for (let i = 1; i < joints.length - 1; i++) {
+      const p0 = joints[i - 1], p1 = joints[i], p2 = joints[i + 1];
+      const l1 = marks[i] - marks[i - 1], l2 = marks[i + 1] - marks[i], r = Math.min(round, l1 * 0.45, l2 * 0.45);
+      const a = [0, 1, 2].map((q) => p1[q] + ((p0[q] - p1[q]) * r) / l1), c = [0, 1, 2].map((q) => p1[q] + ((p2[q] - p1[q]) * r) / l2);
+      for (let k = 0; k <= 8; k++) { const t = k / 8, u = 1 - t; poly.push([0, 1, 2].map((q) => u * u * a[q] + 2 * u * t * p1[q] + t * t * c[q])); }
+    }
+    poly.push(joints[joints.length - 1]);
+    const cum = [0];
+    for (let i = 1; i < poly.length; i++) cum.push(cum[i - 1] + Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1], poly[i][2] - poly[i - 1][2]));
+    const total = cum[cum.length - 1], mk = marks.map((v) => (v / acc) * total);
+    // 2. rings evenly spaced along the path
+    let sgi = 1;
+    for (let i = 0; i < rings; i++) {
+      const s = (total * i) / (rings - 1); S[i] = s;
+      while (sgi < poly.length - 1 && cum[sgi] < s) sgi++;
+      const t = (s - cum[sgi - 1]) / (cum[sgi] - cum[sgi - 1] || 1);
+      for (let q = 0; q < 3; q++) C[i][q] = poly[sgi - 1][q] + (poly[sgi][q] - poly[sgi - 1][q]) * t;
+    }
+    for (let i = 0; i < rings; i++) {
+      const a = C[Math.max(0, i - 1)], b = C[Math.min(rings - 1, i + 1)];
+      let tx = b[0] - a[0], ty = b[1] - a[1], tz = b[2] - a[2]; const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
+      T[i][0] = tx; T[i][1] = ty; T[i][2] = tz;
+      const d = ref[0] * tx + ref[1] * ty + ref[2] * tz;
+      let nx = ref[0] - tx * d, ny = ref[1] - ty * d, nz = ref[2] - tz * d; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      N[i][0] = nx; N[i][1] = ny; N[i][2] = nz;
+      B[i][0] = ty * nz - tz * ny; B[i][1] = tz * nx - tx * nz; B[i][2] = tx * ny - ty * nx;
+    }
+    // 3. cross-sections from the profile
+    for (let i = 0; i < rings; i++) {
+      const s = S[i];
+      let seg = 0; while (seg < mk.length - 2 && s > mk[seg + 1]) seg++;
+      const x = seg + (s - mk[seg]) / (mk[seg + 1] - mk[seg] || 1);
+      let k = 0; while (k < keys.length - 2 && x > keys[k + 1][0]) k++;
+      const k0 = keys[k], k1 = keys[k + 1], f = clamp((x - k0[0]) / (k1[0] - k0[0] || 1), 0, 1), e = f * f * (3 - 2 * f);
+      const A = (k0[1] + (k1[1] - k0[1]) * e) * girth, Bw = (k0[2] + (k1[2] - k0[2]) * e) * girth, P = (k0[3] || 2) + ((k1[3] || 2) - (k0[3] || 2)) * e;
+      const ex = 2 / P, eg = (2 * (P - 1)) / P;
+      for (let j = 0; j <= sides; j++) {
+        const v = i * W + j, px = A * sg(cs[j], ex), py = Bw * sg(sn[j], ex);
+        let ux = sg(cs[j], eg) / A, uy = sg(sn[j], eg) / Bw; const ul = Math.hypot(ux, uy) || 1;
+        gx[v] = ux / ul; gy[v] = uy / ul; rad[v] = Math.hypot(px, py);
+        pos[3 * v] = C[i][0] + N[i][0] * px + B[i][0] * py;
+        pos[3 * v + 1] = C[i][1] + N[i][1] * px + B[i][1] * py;
+        pos[3 * v + 2] = C[i][2] + N[i][2] * px + B[i][2] * py;
+      }
+    }
+    // 4. normals: the cross-section's own normal, tipped along the tube where the radius changes
+    for (let i = 0; i < rings; i++) {
+      const i0 = Math.max(0, i - 1), i1 = Math.min(rings - 1, i + 1), ds = S[i1] - S[i0] || 1;
+      for (let j = 0; j <= sides; j++) {
+        const v = i * W + j, slope = (rad[i1 * W + j] - rad[i0 * W + j]) / ds;
+        let x = N[i][0] * gx[v] + B[i][0] * gy[v] - T[i][0] * slope, y = N[i][1] * gx[v] + B[i][1] * gy[v] - T[i][1] * slope, z = N[i][2] * gx[v] + B[i][2] * gy[v] - T[i][2] * slope;
+        const l = Math.hypot(x, y, z) || 1; nor[3 * v] = x / l; nor[3 * v + 1] = y / l; nor[3 * v + 2] = z / l;
+      }
+    }
+    pa.needsUpdate = true; na.needsUpdate = true;
+  };
+  return m;
+}
+
+// body profiles: [x, half-depth (front-back), half-width, squareness]
+const PROF = {
+  // crotch -> pelvis -> lower chest -> neck base -> top of the neck
+  torso: [[0, 0.04, 0.07, 2], [0.35, 0.088, 0.135, 2.1], [1, 0.112, 0.168, 2.3], [1.45, 0.113, 0.16, 2.3], [2, 0.126, 0.174, 2.5], [2.5, 0.134, 0.19, 2.7],
+    [2.86, 0.122, 0.198, 2.9], [3, 0.085, 0.11, 2.4], [3.18, 0.062, 0.064, 2], [4, 0.056, 0.056, 2]],
+  // shoulder (inside the torso) -> shoulder joint -> elbow -> wrist; loose sleeve with a cuff
+  arm: [[0, 0.05, 0.05], [1, 0.062, 0.062], [1.3, 0.058, 0.056], [1.85, 0.05, 0.05], [2, 0.051, 0.05], [2.28, 0.054, 0.05], [2.86, 0.043, 0.041], [3, 0.046, 0.046]],
+  // hip -> knee -> ankle; baggy pants over knee braces, tucked into the boot
+  leg: [[0, 0.09, 0.092], [0.15, 0.098, 0.1], [0.5, 0.09, 0.09], [0.8, 0.074, 0.076], [0.97, 0.08, 0.08], [1.12, 0.072, 0.068], [1.3, 0.06, 0.058], [1.5, 0.05, 0.05], [2, 0.044, 0.044]],
+};
+
 function buildRider() {
   const g = new THREE.Group();
-  const seg = (profile, mat, n = 20) => { const m = lathe(profile, mat, n); g.add(m); return m; };
-  const blob = (mat, n = 20) => { const m = mesh(new THREE.SphereGeometry(1, n, Math.round(n * 0.7)), mat); g.add(m); return m; };
-  // limb profiles: [radius, t] with t = 0 at the proximal joint and 1 at the distal one
-  const THIGH = [[0, -0.04], [0.07, 0], [0.088, 0.2], [0.086, 0.55], [0.074, 0.88], [0.06, 1.0], [0, 1.03]];
-  const SHIN = [[0, -0.03], [0.062, 0], [0.06, 0.25], [0.052, 0.5], [0, 0.52]];
-  const BOOT = [[0, 0], [0.066, 0.0], [0.07, 0.15], [0.067, 0.5], [0.072, 0.92], [0.07, 1.0], [0.06, 1.0], [0, 0.99]];
-  const UARM = [[0, -0.05], [0.066, 0], [0.064, 0.4], [0.054, 0.9], [0, 1.02]];
-  const FARM = [[0, -0.04], [0.052, 0], [0.05, 0.35], [0.041, 0.8], [0.046, 0.86], [0.047, 1.0], [0, 1.01]];
-  const TORSO = [[0, -0.06], [0.12, -0.03], [0.15, 0.1], [0.158, 0.4], [0.18, 0.7], [0.18, 0.84], [0.14, 0.95], [0.07, 1.0], [0, 1.01]];
-  const L = {
-    thigh: [seg(THIGH, RD.pants), seg(THIGH, RD.pants)],
-    shin: [seg(SHIN, RD.pants), seg(SHIN, RD.pants)],
-    boot: [seg(BOOT, RD.boot), seg(BOOT, RD.boot)],
-    uarm: [seg(UARM, RD.jersey), seg(UARM, RD.jersey)],
-    farm: [seg(FARM, RD.jersey), seg(FARM, RD.jersey)],
-  };
-  const torso = seg(TORSO, RD.jerseyBody, 28);
-  const pelvis = blob(RD.pants);
-  const shoulders = [blob(RD.jersey), blob(RD.jersey)];
-  // knee braces
-  const braces = [0, 1].map(() => {
-    const b = new THREE.Group(); g.add(b);
-    b.add(mesh(RB(0.11, 0.2, 0.15, 0.04), RD.brace));
-    for (const s of [-1, 1]) { const h = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 16), RD.braceGold); h.rotation.x = Math.PI / 2; h.position.set(-0.005, 0, s * 0.078); b.add(h); }
-    return b;
+  const add = (m) => { g.add(m); return m; };
+  const torso = add(sweepMesh(40, 28, RD.jerseyBody));
+  const arms = [0, 1].map(() => add(sweepMesh(30, 16, RD.sleeve)));
+  const legs = [0, 1].map(() => add(sweepMesh(34, 18, RD.pantsLeg)));
+  // tall boots: a shaft up the shin with a dark padded top, a chunky foot, four buckles
+  const BOOT = [[0, 0], [0.07, 0.0], [0.074, 0.12], [0.068, 0.45], [0.071, 0.8], [0.077, 0.9], [0, 0.9]];
+  const CUFF = [[0, 0.88], [0.079, 0.88], [0.084, 0.94], [0.081, 1.0], [0.062, 1.0], [0, 0.99]];
+  const boots = [0, 1].map(() => {
+    const shaft = add(lathe(BOOT, RD.boot, 28)), cuff = add(lathe(CUFF, RD.bootDark, 28));
+    const foot = new THREE.Group(); g.add(foot);
+    const sh = pathShape(['M', -0.075, 0, 'L', 0.2, 0, 'Q', 0.268, 0.0, 0.27, 0.048, 'Q', 0.262, 0.1, 0.15, 0.108, 'L', 0.03, 0.15, 'L', -0.075, 0.16, 'Z']);
+    const upper = panel(sh, 0.088, RD.boot, 0.02); upper.position.y = 0.022; foot.add(upper);
+    const toe = mesh(RB(0.1, 0.05, 0.118, 0.022), RD.bootDark); toe.position.set(0.215, 0.05, 0); toe.rotation.z = -0.35; foot.add(toe);
+    const sole = mesh(RB(0.36, 0.026, 0.12, 0.009), RD.bootDark); sole.position.set(0.095, 0.013, 0); foot.add(sole);
+    const heel = mesh(RB(0.09, 0.045, 0.11, 0.01), RD.bootDark); heel.position.set(-0.035, 0.024, 0); foot.add(heel);
+    const buckles = [0, 1, 2, 3].map(() => add(mesh(RB(0.055, 0.016, 0.012, 0.004), RD.buckle)));
+    return { shaft, cuff, foot, buckles };
   });
-  // boot feet: sole + toe box, plus buckles on the outside of the shaft
-  const feet = [0, 1].map(() => {
-    const f = new THREE.Group(); g.add(f);
-    const sh = pathShape(['M', -0.06, 0, 'L', 0.2, 0, 'Q', 0.25, 0.0, 0.25, 0.04, 'Q', 0.24, 0.085, 0.14, 0.095, 'L', -0.06, 0.12, 'Z']);
-    const upper = panel(sh, 0.085, RD.boot, 0.018); upper.position.y = 0.016; f.add(upper);
-    const sole = mesh(RB(0.31, 0.022, 0.11, 0.008), RD.bootDark); sole.position.set(0.09, 0.011, 0); f.add(sole);
-    const heel = mesh(RB(0.08, 0.04, 0.1, 0.01), RD.bootDark); heel.position.set(-0.04, 0.03, 0); f.add(heel);
-    return f;
+  // gloves: a rounded fist wrapped round the grip, a padded knuckle guard, the thumb over the top, a short gauntlet
+  const ell = (rx, ry, rz, mat) => { const m = mesh(new THREE.SphereGeometry(1, 20, 14), mat); m.scale.set(rx, ry, rz); return m; };
+  const hands = [0, 1].map(() => {
+    const h = new THREE.Group(); g.add(h);
+    const fist = ell(0.058, 0.044, 0.052, RD.glove); fist.position.x = 0.02; h.add(fist);
+    const knuckle = ell(0.03, 0.014, 0.045, RD.gloveTop); knuckle.position.set(0.04, 0.032, 0); knuckle.rotation.z = -0.3; h.add(knuckle);
+    const thumb = ell(0.034, 0.016, 0.016, RD.glove); thumb.position.set(0.035, -0.022, 0.034); thumb.rotation.y = 0.5; h.add(thumb);
+    const gaunt = mesh(new THREE.CylinderGeometry(0.048, 0.044, 0.07, 20), RD.glove); gaunt.rotation.z = Math.PI / 2; gaunt.position.x = -0.05; h.add(gaunt);
+    const band2 = mesh(new THREE.CylinderGeometry(0.0495, 0.0495, 0.016, 20), RD.gloveTop); band2.rotation.z = Math.PI / 2; band2.position.x = -0.07; h.add(band2);
+    return h;
   });
-  const buckles = [0, 1].map(() => [0, 1, 2].map(() => { const b = mesh(RB(0.05, 0.016, 0.012, 0.004), RD.buckle); g.add(b); return b; }));
-  // gloves around the grips
-  const hands = [0, 1].map(() => { const h = new THREE.Group(); g.add(h); h.add(mesh(RB(0.085, 0.07, 0.1, 0.03), RD.glove)); const k = mesh(RB(0.05, 0.03, 0.08, 0.012), RD.gloveGold); k.position.set(0.0, 0.033, 0); h.add(k); return h; });
-  const neck = blob(RD.neck, 16);
-  // helmet
+  // helmet: one shell pulled forward and down into a motocross chin bar, a wide peak, goggles in the eye port
   const helmet = new THREE.Group(); g.add(helmet);
   {
-    const shell = mesh(new THREE.SphereGeometry(0.142, 36, 26), RD.helmet); shell.scale.set(1.12, 1.0, 0.94); helmet.add(shell);
-    // chin bar: a rounded bar swept around the jaw, jutting forward and down like a motocross lid
-    helmet.add(band([[-0.005, -0.07, -0.104], [0.09, -0.098, -0.1], [0.172, -0.124, -0.056], [0.205, -0.136, 0], [0.172, -0.124, 0.056], [0.09, -0.098, 0.1], [-0.005, -0.07, 0.104]], 0.017, 0.042, RD.shell));
-    for (const sgn of [-1, 1]) { const v = mesh(RB(0.03, 0.022, 0.024, 0.006), RD.helmetDark); v.position.set(0.15, -0.115, sgn * 0.072); v.rotation.y = sgn * 0.9; helmet.add(v); }
-    const vent = mesh(RB(0.026, 0.05, 0.07, 0.01), RD.helmetDark); vent.position.set(0.218, -0.134, 0); vent.rotation.z = -0.35; helmet.add(vent);
-    // peak: a broad visor over the eye port, tipped up
-    const peak = panel(pathShape(['M', 0.0, -0.118, 'Q', 0.1, -0.124, 0.165, -0.084, 'Q', 0.19, 0, 0.165, 0.084, 'Q', 0.1, 0.124, 0.0, 0.118, 'Z']), 0.008, RD.shell, 0.004);
-    peak.rotation.x = Math.PI / 2;
-    const pk = new THREE.Group(); pk.add(peak); pk.position.set(0.085, 0.05, 0); pk.rotation.z = 0.2; helmet.add(pk);
-    { const ps = mesh(RB(0.1, 0.006, 0.03, 0.002), RD.strap); ps.position.set(0.1, 0.006, 0); pk.add(ps); }
-    // goggles: a curved frame across the eye port with a tinted lens
-    const arc = (k, a0, a1, y, n = 9) => Array.from({ length: n }, (_, i) => { const a = a0 + ((a1 - a0) * i) / (n - 1); return [0.159 * k * Math.cos(a), y, 0.1335 * k * Math.sin(a)]; });
-    helmet.add(band(arc(1.06, -0.9, 0.9, 0.0), 0.034, 0.011, RD.goggle));
-    helmet.add(band(arc(1.13, -0.72, 0.72, 0.0), 0.025, 0.004, RD.lens));
-    const strap = mesh(new THREE.TorusGeometry(0.15, 0.018, 8, 40), RD.strap); strap.rotation.x = Math.PI / 2; strap.scale.set(1.06, 0.97, 0.45); strap.position.set(-0.01, 0.0, 0); helmet.add(strap);
+    const r = 0.142, sg = new THREE.SphereGeometry(r, 56, 40), sp = sg.attributes.position;
+    for (let i = 0; i < sp.count; i++) {
+      const nx = sp.getX(i) / r, ny = sp.getY(i) / r, nz = sp.getZ(i) / r;
+      const w = Math.pow(Math.max(0, nx), 2.2) * THREE.MathUtils.smoothstep(-ny, 0.0, 0.62); // lower front: the chin bar
+      let x = 1.1 * nx * r + w * 0.105, y = ny * r - w * 0.04;
+      const z = 0.95 * nz * r * (1 - 0.5 * w);
+      const floor = -0.8 * r - w * 0.03; if (y < floor) y = floor + (y - floor) * 0.12; // open bottom where the neck goes in
+      sp.setXYZ(i, x, y, z);
+    }
+    sg.computeVertexNormals();
+    helmet.add(mesh(sg, RD.helmet));
+    // peak: a broad visor that narrows to a rounded point, drops away at the sides and tips up slightly
+    const pg = new THREE.BoxGeometry(1, 1, 1, 20, 1, 24), pp = pg.attributes.position;
+    for (let i = 0; i < pp.count; i++) {
+      const v = pp.getX(i) + 0.5, u = pp.getZ(i) * 2, t = pp.getY(i) > 0 ? 1 : 0;
+      const len = 0.235 - 0.075 * u * u, x = -0.02 + v * len, z = u * (0.126 - 0.055 * v * v);
+      pp.setXYZ(i, x, 0.14 * x - 1.3 * z * z + t * 0.011 * (1 - 0.45 * v), z);
+    }
+    pg.computeVertexNormals();
+    const peak = mesh(pg, RD.shell); peak.position.set(0.075, 0.062, 0); helmet.add(peak);
+    { const ps = mesh(RB(0.12, 0.004, 0.024, 0.0015), RD.strap); ps.position.set(0.16, 0.08, 0); ps.rotation.z = 0.14; helmet.add(ps); }
+    // goggles: a foam-backed frame across the eye port, a mirrored lens, a strap round the back of the shell
+    const arc = (k, a0, a1, y, n = 11) => Array.from({ length: n }, (_, i) => { const a = a0 + ((a1 - a0) * i) / (n - 1); return [0.156 * k * Math.cos(a), y, 0.135 * k * Math.sin(a)]; });
+    helmet.add(band(arc(1.03, -0.9, 0.9, 0.01), 0.031, 0.011, RD.goggle));
+    helmet.add(band(arc(1.1, -0.74, 0.74, 0.01), 0.024, 0.003, RD.lens));
+    helmet.add(band(arc(1.035, 0.85, Math.PI * 2 - 0.85, 0.01, 25), 0.0135, 0.003, RD.gstrap));
   }
-  // neck brace ring
-  const brace = mesh(new THREE.TorusGeometry(0.115, 0.028, 10, 32), RD.brace); g.add(brace);
-  const Z = new THREE.Vector3(0, 0, 1), bdir = new THREE.Vector3();
-
+  const Z = new THREE.Vector3(0, 0, 1), bdir = new THREE.Vector3(), hx = new THREE.Vector3(), hy = new THREE.Vector3(), hz = new THREE.Vector3(), hm = new THREE.Matrix4();
   const place = (m, a, b, sx, sz = sx) => { aim(m, a, b); m.scale.set(sx, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), sz); };
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+  const along = (a, d, t) => [a[0] + d[0] * t, a[1] + d[1] * t, a[2] + d[2] * t];
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
   return {
     group: g,
     pose(j, k = 1) {
+      // torso: from below the pelvis, through a slightly rounded upper back, up the neck towards the head
+      const spine = unit(sub(j.neck, j.pelvis)), front = [spine[1], -spine[0], 0];
+      const crotch = [j.pelvis[0] + 0.015, j.pelvis[1] - 0.105, 0];
+      const chest = along(along(j.pelvis, spine, 0.3), front, -0.018);
+      const neckTop = along(j.neck, unit(sub(j.head, j.neck)), 0.075);
+      torso.update([crotch, j.pelvis, chest, j.neck, neckTop], front, PROF.torso, k, 0.09);
       for (let i = 0; i < 2; i++) {
-        place(L.thigh[i], j.hip[i], j.knee[i], k);
-        const ank = j.ankle[i], kn = j.knee[i];
-        place(L.shin[i], kn, ank, k);
-        // boot shaft covers the lower 60% of the shin
-        const bt = [lerp(ank[0], kn[0], 0.6), lerp(ank[1], kn[1], 0.6), lerp(ank[2], kn[2], 0.6)];
-        place(L.boot[i], ank, bt, 1);
-        L.boot[i].position.set(ank[0], ank[1] - 0.02, ank[2]);
-        const dirx = j.toe[i][0] - ank[0], diry = j.toe[i][1] - ank[1];
-        feet[i].position.set(ank[0] - 0.02, ank[1] - 0.085, ank[2]);
-        feet[i].rotation.set(0, 0, Math.atan2(diry + 0.06, dirx));
-        // buckles: stacked on the outside of the boot shaft
-        const out = i ? 1 : -1;
-        buckles[i].forEach((b, n) => {
-          const t = 0.25 + n * 0.22;
-          b.position.set(lerp(ank[0], bt[0], t) - 0.01, lerp(ank[1], bt[1], t), lerp(ank[2], bt[2], t) + out * 0.068);
-          b.rotation.set(0, 0, Math.atan2(bt[1] - ank[1], bt[0] - ank[0]) + Math.PI / 2 + 0.15);
+        const s = i ? 1 : -1;
+        // leg: the knee's bend gives the front of the leg
+        legs[i].update([j.hip[i], j.knee[i], j.ankle[i]], unit(sub(j.knee[i], mid(j.hip[i], j.ankle[i]))), PROF.leg, k, 0.08);
+        // arm: starts inside the torso so the shoulder rounds off into it
+        const wrist = along(j.hand[i], unit(sub(j.elbow[i], j.hand[i])), 0.075);
+        const inner = [j.shoulder[i][0] - spine[0] * 0.01, j.shoulder[i][1] - spine[1] * 0.01, j.shoulder[i][2] - s * 0.06];
+        arms[i].update([inner, j.shoulder[i], j.elbow[i], wrist], unit(sub(j.elbow[i], mid(j.shoulder[i], wrist))), PROF.arm, k, 0.06);
+        // glove: x along the forearm into the fist, z along the grip
+        hx.set(...unit(sub(j.hand[i], wrist)));
+        hz.set(...(j.grip ? [0, 0, 1] : [1, 0, 0])); hz.addScaledVector(hx, -hz.dot(hx)).normalize();
+        hy.crossVectors(hz, hx);
+        hm.makeBasis(hx, hy, hz); hands[i].quaternion.setFromRotationMatrix(hm);
+        hands[i].position.set(...along(j.hand[i], unit(sub(j.hand[i], wrist)), -0.015));
+        hands[i].scale.setScalar(Math.max(1, k * 0.96));
+        // boot shaft from the ankle to two thirds of the way up the shin
+        const ank = j.ankle[i], kn = j.knee[i], shin = unit(sub(kn, ank));
+        const b0 = along(ank, shin, -0.045), top = along(ank, shin, 0.3);
+        const bt = boots[i];
+        place(bt.shaft, b0, top, 1.1 * Math.max(1, k * 0.95), Math.max(1, k * 0.95)); place(bt.cuff, b0, top, 1.1 * Math.max(1, k * 0.95), Math.max(1, k * 0.95));
+        bt.foot.position.set(ank[0] - 0.02, ank[1] - 0.088, ank[2]);
+        bt.foot.rotation.set(0, 0, Math.atan2(j.toe[i][1] - ank[1] + 0.06, j.toe[i][0] - ank[0]));
+        bt.buckles.forEach((b, n) => {
+          const p = along(b0, shin, 0.07 + n * 0.068);
+          b.position.set(p[0] - shin[1] * 0.01, p[1] + shin[0] * 0.01, p[2] + s * 0.073);
+          b.rotation.set(0, 0, Math.atan2(shin[1], shin[0]) + Math.PI / 2 + 0.12);
         });
-        // knee brace sits on the front of the knee, aligned with the shin
-        const sh = Math.atan2(ank[1] - kn[1], ank[0] - kn[0]);
-        braces[i].position.set(kn[0] + 0.035 * Math.cos(sh + Math.PI / 2), kn[1] + 0.035 * Math.sin(sh + Math.PI / 2), kn[2]);
-        braces[i].rotation.set(0, 0, sh + Math.PI / 2);
-        braces[i].scale.setScalar(Math.max(1, k * 0.98));
-        place(L.uarm[i], j.shoulder[i], j.elbow[i], k);
-        place(L.farm[i], j.elbow[i], j.hand[i], k);
-        shoulders[i].position.set(...j.shoulder[i]); shoulders[i].scale.setScalar(0.078 * k);
-        hands[i].position.set(...j.hand[i]);
-        hands[i].rotation.set(0, 0, j.handTilt ?? 0.4);
       }
-      pelvis.position.set(j.pelvis[0], j.pelvis[1], j.pelvis[2]); pelvis.scale.set(0.13 * k, 0.11 * k, 0.165 * k);
-      // torso: depth (x) is thinner than width (z)
-      place(torso, j.pelvis, j.neck, 0.78 * k, 1.08 * k);
-      neck.position.set(...j.neck); neck.scale.set(0.055, 0.07, 0.055);
-      brace.position.set(j.neck[0] - 0.01, j.neck[1] - 0.01, j.neck[2]);
-      bdir.set(j.neck[0] - j.pelvis[0], j.neck[1] - j.pelvis[1], 0).normalize();
-      brace.quaternion.setFromUnitVectors(Z, bdir); brace.scale.set(1.2 * k, 1.05 * k, 1);
-      helmet.position.set(...j.head); helmet.rotation.set(0, 0, j.headTilt || 0);
+      // helmet
+      helmet.position.set(...j.head); helmet.rotation.set(0, j.headYaw || 0, j.headTilt || 0);
     },
   };
 }
@@ -2199,31 +2355,32 @@ function buildRider() {
 function ridingPose(sim) {
   const lc = sim.riderOn ? sim.lc : 0.086;
   const dip = lc - 0.086;                       // how far the legs are compressed beyond their resting bend
-  const pelvis = [-0.26 - dip * 0.45, PEG[1] + 0.76 - lc, 0];
-  const lean = 0.84 + dip * 0.7;                // torso angle from vertical (radians)
+  const pelvis = [-0.33 - dip * 0.45, PEG[1] + 0.83 - lc, 0];
+  const lean = 0.8 + dip * 0.7;                 // torso angle from vertical (radians)
   const T = 0.49;
   const neck = [pelvis[0] + Math.sin(lean) * T, pelvis[1] + Math.cos(lean) * T, 0];
   const head = [neck[0] + 0.1, neck[1] + 0.13, 0];
-  const sh = (s) => [neck[0] - Math.sin(lean) * 0.045, neck[1] - Math.cos(lean) * 0.045, s * 0.19];
-  const hip = (s) => [pelvis[0] + 0.02, pelvis[1] - 0.05, s * 0.11];
-  const ankle = (s) => [PEG[0] - 0.1, PEG[1] + 0.09, s * 0.2];
+  const sh = (s) => [neck[0] - Math.sin(lean) * 0.05, neck[1] - Math.cos(lean) * 0.05, s * 0.18];
+  const hip = (s) => [pelvis[0] + 0.02, pelvis[1] - 0.05, s * 0.1];
+  const ankle = (s) => [PEG[0] - 0.1, PEG[1] + 0.09, s * 0.19];
   const hand = (s) => [BARS[0] - 0.02, BARS[1] + 0.03, s * 0.355];
   const S = [-1, 1];
   const shoulder = S.map(sh), hipJ = S.map(hip), ankleJ = S.map(ankle), handJ = S.map(hand);
-  const knee = S.map((s, i) => ik3(hipJ[i], ankleJ[i], 0.44, 0.45, [1, 0.1, s * 0.55]));
-  const elbow = S.map((s, i) => ik3(shoulder[i], handJ[i], 0.3, 0.31, [-0.45, 0.25, s * 1]));
+  const knee = S.map((s, i) => ik3(hipJ[i], ankleJ[i], 0.44, 0.45, [1, 0.15, s * 0.3]));
+  const elbow = S.map((s, i) => ik3(shoulder[i], handJ[i], 0.3, 0.31, [-0.45, 0.2, s * 1]));
   const toe = ankleJ.map((a) => [a[0] + 0.19, a[1] - 0.075, a[2]]);
-  return { pelvis, neck, head, headTilt: -0.12 + dip * 0.5, lean, hip: hipJ, knee, ankle: ankleJ, toe, shoulder, elbow, hand: handJ, handTilt: 0.5 };
+  return { pelvis, neck, head, headTilt: -0.12 + dip * 0.5, lean, hip: hipJ, knee, ankle: ankleJ, toe, shoulder, elbow, hand: handJ, grip: true };
 }
 const STAND = (() => {
+  // relaxed: weight on the right leg, left knee eased forward, shoulders tipped against the hips, looking at the bike
   const S = [-1, 1];
-  const pelvis = [0, 0.97, 0], neck = [0.0, 1.47, 0], head = [0.03, 1.62, 0];
-  const shoulder = S.map((s) => [0, 1.43, s * 0.19]), hip = S.map((s) => [0, 0.92, s * 0.095]);
-  const ankle = S.map((s) => [-0.02, 0.1, s * 0.12]), toe = ankle.map((a) => [a[0] + 0.2, a[1] - 0.08, a[2]]);
-  const hand = S.map((s) => [0.04, 0.9, s * 0.27]);
-  const knee = S.map((s, i) => ik3(hip[i], ankle[i], 0.44, 0.45, [1, 0, 0]));
-  const elbow = S.map((s, i) => ik3(shoulder[i], hand[i], 0.3, 0.31, [-1, 0, s * 0.3]));
-  return { pelvis, neck, head, headTilt: 0, lean: 0, hip, knee, ankle, toe, shoulder, elbow, hand, handTilt: -1.2 };
+  const pelvis = [0, 0.965, 0.012], neck = [0.0, 1.47, 0], head = [0.03, 1.62, 0];
+  const shoulder = S.map((s) => [0, 1.418 - s * 0.008, s * 0.18]), hip = S.map((s) => [0, 0.92 + s * 0.012, s * 0.095 + 0.012]);
+  const ankle = [[0.06, 0.1, -0.16], [-0.02, 0.1, 0.1]], toe = ankle.map((a) => [a[0] + 0.2, a[1] - 0.08, a[2]]);
+  const hand = [[0.07, 0.875, -0.27], [0.03, 0.865, 0.27]];
+  const knee = S.map((s, i) => ik3(hip[i], ankle[i], 0.44, 0.45, [1, 0, s * 0.1]));
+  const elbow = S.map((s, i) => ik3(shoulder[i], hand[i], 0.3, 0.31, [-1, 0, s * 0.4]));
+  return { pelvis, neck, head, headTilt: -0.05, headYaw: 0.35, lean: 0, hip, knee, ankle, toe, shoulder, elbow, hand, grip: false };
 })();
 const standing = buildRider();
 standing.group.position.set(-3.1, FLOOR_Y + 0.09, -2.3);
